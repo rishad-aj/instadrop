@@ -783,6 +783,11 @@ downloadBtn.addEventListener("click", async () => {
   }
 });
 
+document.addEventListener("DOMContentLoaded", () => {
+  if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0 && location.hostname.indexOf("perchance") === -1) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+});
 urlInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") downloadBtn.click();
 });
