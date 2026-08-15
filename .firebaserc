@@ -1,5 +1,14 @@
 {
   "projects": {
     "default": "instadrop-d0a23"
+  },
+  "targets": {
+    "instadrop-d0a23": {
+      "hosting": {
+        "instadrop": [
+          "instadrop"
+        ]
+      }
+    }
   }
 }
