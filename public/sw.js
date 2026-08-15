@@ -1,5 +1,6 @@
-/* Instadrop service worker — enables "Add to Home Screen" install + offline cache */
-var CACHE = "instadrop-v1";
+/* Instadrop service worker — enables "Add to Home Screen" install + offline cache.
+   Bump CACHE on every release so browsers fetch fresh files after a deploy. */
+var CACHE = "instadrop-v2";
 var CORE = ["/", "/index.html", "/styles.css", "/script.js", "/favicon.ico", "/logo.png", "/brand.png", "/manifest.webmanifest"];
 
 self.addEventListener("install", function (e) {
@@ -33,6 +34,23 @@ self.addEventListener("fetch", function (e) {
     return;
   }
 
+  var isFresh = /\.(css|js|json|webmanifest)$/.test(url.pathname);
+
+  if (isFresh) {
+    /* css/js/manifest: always try network first so deploys show instantly, cache as backup */
+    e.respondWith(
+      fetch(req).then(function (res) {
+        if (res.ok) {
+          var copy = res.clone();
+          caches.open(CACHE).then(function (c) { return c.put(req, copy); });
+        }
+        return res;
+      }).catch(function () { return caches.match(req); })
+    );
+    return;
+  }
+
+  /* images/fonts/others: cache-first, then network */
   e.respondWith(
     caches.match(req).then(function (hit) {
       return hit || fetch(req).then(function (res) {
