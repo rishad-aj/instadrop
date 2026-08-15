@@ -1,23 +1,15 @@
 /* ============================================================
    Instadrop - script.js
    Standalone application logic.
-   Free, keyless resolution: every media type (reels, posts,
-   carousels, active stories, highlights AND profile pictures)
-   is tried against several free downloader APIs + Instagram's
-   own pages (fetched server-side via a CORS proxy), so nothing
-   needs to be deployed or configured.
    ============================================================ */
 
-/* Network helper: uses Perchance's superFetch proxy when available
-   (runs inside the perchance editor/preview), otherwise falls back to
-   the browser's native fetch (standalone / GitHub Pages / Vercel). */
+/* Network helper: uses Perchance's superFetch proxy when available,
+   otherwise falls back to the browser's native fetch. */
 const fetchLike = (typeof window.root !== 'undefined' && window.root && window.root.superFetch)
   ? window.root.superFetch.bind(window.root)
   : window.fetch.bind(window);
 
-/* Cloudflare Worker proxy helpers. When PROXY is set, Instagram pages and
-   media blobs are resolved through it (browsers can't fetch Instagram directly
-   due to CORS). This is optional — everything works free without it. */
+/* Optional Cloudflare Worker proxy configuration */
 function proxyResolve(path, body) {
   if (PROXY) {
     return fetch(PROXY + path, {
@@ -123,17 +115,12 @@ async function resolveLocally(path, body) {
 }
 
 const API = "https://api.downloadgram.org/media";
-const API_STORY = "https://api.downloadgram.org/story";
-/* PROXY is optional. The free setup (PROXY = "") resolves everything through
-   free keyless APIs and Instagram's own pages fetched via free CORS proxies. */
 const PROXY = "";
 const FFMPEG_CORE = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js";
 const FFMPEG_WASM = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm";
 
 /* ---------- free keyless fetch helpers ---------- */
 
-/* Free CORS proxies: let a plain static host read pages (Instagram, Imginn)
-   that would otherwise be CORS-blocked in the browser. */
 const CORS_PROXIES = [
   (u) => "https://corsproxy.io/?url=" + encodeURIComponent(u),
   (u) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u),
@@ -146,9 +133,8 @@ async function serverFetch(url, opts) {
   try {
     return await fetchLike(url, opts);
   } catch (e) {
-    if (HAS_SUPERFETCH) throw e; // superFetch is already a server-side proxy
+    if (HAS_SUPERFETCH) throw e;
   }
-  /* Static host: retry through free CORS proxies. */
   let lastErr = "Network error";
   for (const build of CORS_PROXIES) {
     try {
@@ -178,7 +164,7 @@ async function postText(url, body) {
 
 function cleanUrl(u) { return String(u || "").replace(/\\\//g, "/").replace(/&amp;/g, "&"); }
 
-/* Normalize the JSON shape of any free downloader API into {kind,thumb,url} items. */
+/* Normalize JSON responses from APIs */
 function jsonToItems(text) {
   let j;
   try { j = JSON.parse(text); } catch (e) { return []; }
@@ -187,16 +173,16 @@ function jsonToItems(text) {
   const push = (raw, thumb, kind) => {
     const u = cleanUrl(raw);
     if (!/^https?:\/\//.test(u)) return;
-    if (!/(cdninstagram\.com|imginn\.com|fbcdn\.net)/.test(u)) return;
     if (seen.has(u)) return;
     seen.add(u);
     items.push({ kind: kind || (/\.mp4(\?|&|$)/i.test(u) ? "video" : "image"), thumb: thumb ? cleanUrl(thumb) : null, url: u });
   };
   const scan = (o) => {
     if (!o || typeof o !== "object") return;
-    if (typeof o.url === "string" && /^https?:\/\//.test(o.url)) push(o.url, o.thumb || o.thumbnail);
+    if (typeof o.url === "string" && /^https?:\/\//.test(o.url)) push(o.url, o.thumb || o.thumbnail || o.img);
     if (typeof o.video === "string" && /^https?:\/\//.test(o.video)) push(o.video, o.thumbnail || o.thumb, "video");
-    if (typeof o.video_audio === "string" && /^https?:\/\//.test(o.video_audio)) push(o.video_audio, o.thumbnail || o.thumb, "video");
+    if (typeof o.video_url === "string" && /^https?:\/\//.test(o.video_url)) push(o.video_url, o.thumbnail || o.thumb || o.display_url, "video");
+    if (typeof o.image_url === "string" && /^https?:\/\//.test(o.image_url)) push(o.image_url, o.image_url, "image");
     if (typeof o.display_url === "string") push(o.display_url, o.display_url, "image");
     if (typeof o.link === "string" && /^https?:\/\//.test(o.link)) push(o.link, o.thumbnail || o.thumb);
     if (typeof o.thumbnail === "string" && /^https?:\/\//.test(o.thumbnail)) push(o.thumbnail, o.thumbnail, "image");
@@ -212,34 +198,15 @@ function jsonToItems(text) {
     if (Array.isArray(o.stories)) { for (const m of o.stories) scan(m); return; }
     if (Array.isArray(o.items)) { for (const m of o.items) scan(m); return; }
     if (Array.isArray(o.medias)) { for (const m of o.medias) scan(m); return; }
+    if (Array.isArray(o.data)) { for (const m of o.data) scan(m); return; }
+    if (Array.isArray(o.result)) { for (const m of o.result) scan(m); return; }
     for (const v of Object.values(o)) if (v && typeof v === "object") scan(v);
   };
   scan(j);
   return items;
 }
 
-/* Imginn story pages list direct CDN media for a user's active stories. */
-function parseImginnMedia(html) {
-  const items = [];
-  const seen = new Set();
-  const add = (raw, kind) => {
-    const u = cleanUrl(raw);
-    if (!/^https?:\/\//.test(u)) return;
-    if (!/(scontent[0-9a-z-]*\.cdninstagram\.com|imginn\.com)/.test(u)) return;
-    if (/t51\.2885-19/.test(u)) return;
-    if (!/\.(mp4|jpg|jpeg|webp)(\?|&|$)/i.test(u)) return;
-    if (seen.has(u)) return;
-    seen.add(u);
-    const isVid = kind === "video" || /\.mp4(\?|&|$)/i.test(u);
-    items.push({ kind: isVid ? "video" : "image", thumb: isVid ? null : u, url: u });
-  };
-  for (const m of html.matchAll(/<a[^>]+href="([^"]+)"/g)) add(m[1]);
-  for (const m of html.matchAll(/<video[^>]+src="([^"]+)"/g)) add(m[1], "video");
-  for (const m of html.matchAll(/<img[^>]+src="([^"]+)"/g)) add(m[1], "image");
-  return items;
-}
-
-/* Try a list of free downloader APIs in order; return the first that yields media. */
+/* Try APIs in order until one returns data */
 async function firstWorking(candidates) {
   for (const c of candidates) {
     try {
@@ -247,7 +214,7 @@ async function firstWorking(candidates) {
       const items = c.parse(t);
       if (items && items.length) return items;
     } catch (e) {
-      // keep trying the next free service
+      // try next candidate
     }
   }
   return [];
@@ -384,7 +351,6 @@ if (scrollToCardBtn) {
   });
 }
 
-/* scrolling placeholder: show the marquee overlay only while the box is empty & unfocused */
 const inputWrap = document.querySelector(".input-wrap");
 const phScroll = document.querySelector(".ph-scroll");
 const phMarquee = document.querySelector(".ph-marquee");
@@ -399,7 +365,6 @@ if (phScroll && phMarquee) {
   syncMarq();
 }
 
-/* paste button: read clipboard into the box, then auto-run if it's a valid link */
 const pasteBtn = document.getElementById("pasteBtn");
 if (pasteBtn) {
   pasteBtn.addEventListener("click", async () => {
@@ -418,7 +383,7 @@ if (pasteBtn) {
     }
   });
 }
-/* FAQ accordion */
+
 for (const faq of document.querySelectorAll("details.accordion")) {
   faq.addEventListener("toggle", () => faq.classList.toggle("accordion-open", faq.open));
 }
@@ -479,14 +444,31 @@ async function fetchMedia(url) {
 
   if (PROXY || (window.root && window.root.superFetch)) {
     try {
-      const data = await withTimeout(proxyResolve("/media", { url: cleanUrl }), 60000, "The download service timed out — try again.");
+      const data = await withTimeout(proxyResolve("/media", { url: cleanUrl }), 60000, "The download service timed out.");
       if (data && data.items && data.items.length) return { code, items: data.items };
-    } catch (e) {
-      // Fall through to the free APIs below.
-    }
+    } catch (e) {}
   }
 
   const items = await firstWorking([
+    {
+      name: "mn-bots",
+      fetch: () => getText("https://instagram-downloader.mn-bots.workers.dev/?url=" + encodeURIComponent(cleanUrl)),
+      parse: (t) => {
+        let j;
+        try { j = JSON.parse(t); } catch (e) { return []; }
+        if (!j.success || !j.media) return [];
+        return j.media.map(m => ({
+          kind: (m.type === "video" || /\.mp4/i.test(m.url)) ? "video" : "image",
+          thumb: m.thumb || null,
+          url: m.url || m.server2 || null,
+        })).filter(m => m.url);
+      },
+    },
+    {
+      name: "anon-social",
+      fetch: () => getText("https://anon-social-info.vercel.app/igdl?key=igdl305&url=" + encodeURIComponent(cleanUrl)),
+      parse: jsonToItems,
+    },
     {
       name: "downloadgram",
       fetch: () => postText(API, { url: cleanUrl }),
@@ -507,14 +489,9 @@ async function fetchMedia(url) {
       fetch: () => getText("https://indown.io/api/info?url=" + encodeURIComponent(cleanUrl)),
       parse: jsonToItems,
     },
-    {
-      name: "instasave",
-      fetch: () => getText("https://instasave.tech/api/instagram?url=" + encodeURIComponent(cleanUrl)),
-      parse: jsonToItems,
-    },
   ]);
   if (!items.length) {
-    throw new Error("No downloadable media was found in that post — the free services are busy right now. Try again in a moment, or check the post is public.");
+    throw new Error("No downloadable media was found in that post — the free services are busy right now. Try again in a moment.");
   }
   return { code, items };
 }
@@ -524,15 +501,12 @@ async function fetchStoryMedia(url) {
 
   if (PROXY || (window.root && window.root.superFetch)) {
     try {
-      const data = await withTimeout(proxyResolve("/story", { url }), 60000, "The download service timed out — try again.");
+      const data = await withTimeout(proxyResolve("/story", { url }), 60000, "The download service timed out.");
       if (data && data.items && data.items.length) return { items: data.items };
-    } catch (e) {
-      // Fall through to the free APIs below.
-    }
+    } catch (e) {}
   }
 
-  let items = await firstWorking([
-    // NEW: primary API for stories & highlights
+  const items = await firstWorking([
     {
       name: "mn-bots",
       fetch: () => getText("https://instagram-downloader.mn-bots.workers.dev/?url=" + encodeURIComponent(url)),
@@ -548,9 +522,9 @@ async function fetchStoryMedia(url) {
       },
     },
     {
-      name: "downloadgram",
-      fetch: () => postText(API_STORY, { url }),
-      parse: (t) => { const html = decodeDgResponse(t); return html ? extractItems(html) : []; },
+      name: "anon-social",
+      fetch: () => getText("https://anon-social-info.vercel.app/igdl?key=igdl305&url=" + encodeURIComponent(url)),
+      parse: jsonToItems,
     },
     {
       name: "snapinsta",
@@ -570,16 +544,6 @@ async function fetchStoryMedia(url) {
   ]);
 
   if (!items.length) {
-    const user = (url.match(/stories\/([^\/]+)\//) || [])[1];
-    if (user && user !== "highlights") {
-      try {
-        const html = await getText("https://imginn.com/stories/" + encodeURIComponent(user) + "/");
-        items = parseImginnMedia(html);
-      } catch (e) {}
-    }
-  }
-
-  if (!items.length) {
     throw new Error(
       isHl
         ? "Couldn't resolve that highlight — the free services are busy right now, or the highlight is private. Try again in a moment."
@@ -589,18 +553,6 @@ async function fetchStoryMedia(url) {
   return { items };
 }
 
-async function getAuthorName(url) {
-  try {
-    const res = await withTimeout(
-      fetchLike("https://www.instagram.com/api/v1/oembed/?url=" + encodeURIComponent(url)),
-      45000
-    );
-    if (!res.ok) return null;
-    const j = await res.json();
-    return j.author_name || null;
-  } catch (e) { return null; }
-}
-
 async function fetchBlob(url, tries = 2) {
   const viaProxy = PROXY ? proxyFileUrl(url) : url;
   const urls = PROXY && viaProxy !== url ? [viaProxy, url] : [url];
@@ -608,7 +560,7 @@ async function fetchBlob(url, tries = 2) {
   for (let i = 0; i < tries; i++) {
     for (const target of urls) {
       try {
-        const res = await withTimeout(fetchLike(target), 60000, "The media host is busy right now — trying again, then try a fresh 'Download' if it keeps failing.");
+        const res = await withTimeout(fetchLike(target), 60000, "The media host is busy right now.");
         if (!res.ok) throw new Error("Download failed (HTTP " + res.status + ").");
         return await res.blob();
       } catch (e) {
@@ -754,67 +706,23 @@ function convertToMp3(bytes) {
 
 /* ---------------- DP (profile picture) ---------------- */
 
-function extractAvatar(html) {
-  const m = html.match(/"profile_pic_url":\s*"([^"]+)"/);
-  if (m) return m[1].replace(/\\\//g, "/");
-  const img = html.match(/<img[^>]+alt="[^"]*profile picture[^"]*"[^>]+src="([^"]+)"/);
-  if (img) return img[1];
-  return null;
-}
-
-/* Instagram serves anonymous visitors a 150x150 pic — request the larger
-   rendition from the CDN, falling back to the original if refused. */
-function tryBigger(url) {
-  const bigger = cleanUrl(url).replace(/_s150x150_/, "_s640x640_");
-  if (bigger === cleanUrl(url)) return Promise.resolve(url);
-  return new Promise((resolve) => {
-    const im = new Image();
-    const fail = () => resolve(url);
-    const done = () => resolve(bigger);
-    im.onload = done;
-    im.onerror = fail;
-    setTimeout(fail, 8000);
-    im.src = bigger;
-  });
-}
-
 async function resolveAvatar(username) {
-  // 1) NEW: profile info API (returns full pic URL)
+  // 1) Worker API for profile info (HTTPS)
   try {
-    const jsonText = await getText("http://bj-insta-profile-info.mmabbas011687.workers.dev/info?username=" + encodeURIComponent(username));
+    const jsonText = await getText("https://bj-insta-profile-info.mmabbas011687.workers.dev/info?username=" + encodeURIComponent(username));
     const data = JSON.parse(jsonText);
     if (data && data.pic) {
-      // The returned pic is already the highest quality we can get
       return { url: cleanUrl(data.pic), src: "profile-info" };
     }
   } catch (e) {}
 
-  /* 2) Instagram's own profile page (via server fetch / CORS proxy). */
+  // 2) Optional Cloudflare Worker Proxy Fallback
   if (PROXY || (window.root && window.root.superFetch)) {
     try {
-      const data = await withTimeout(proxyResolve("/profile", { username }), 60000, "Profile lookup timed out.");
-      if (data && data.profilePicUrl) return { url: await tryBigger(data.profilePicUrl), src: "instagram" };
+      const data = await withTimeout(proxyResolve("/profile", { username }), 30000, "Profile lookup timed out.");
+      if (data && data.profilePicUrl) return { url: data.profilePicUrl, src: "instagram" };
     } catch (e) {}
   }
-  try {
-    const html = await getText("https://www.instagram.com/" + encodeURIComponent(username) + "/");
-    let url = null;
-    for (const b of jsonScriptBlocks(html)) {
-      let j;
-      try { j = JSON.parse(b); } catch (e) { continue; }
-      const u = deepFindKey(j, "xig_user_by_username");
-      if (u && u.profile_pic_url) { url = u.profile_pic_url; break; }
-    }
-    if (!url) url = extractAvatar(html);
-    if (url) return { url: await tryBigger(url), src: "instagram" };
-  } catch (e) {}
-
-  /* 3) Imginn profile viewer — serves a large (828px) avatar. */
-  try {
-    const html = await getText("https://imginn.com/" + encodeURIComponent(username) + "/");
-    const og = html.match(/<meta property="og:image" content="([^"]+)"/);
-    if (og) return { url: cleanUrl(og[1]), src: "imginn" };
-  } catch (e) {}
 
   throw new Error("Couldn't find a profile picture for @" + username + " (the profile may be private or deleted).");
 }
@@ -853,17 +761,6 @@ async function renderItems(data, opts, input) {
   const card = wrapResult(metaEl);
   resultCtn.appendChild(card);
 
-  if (opts.authorUrl) {
-    getAuthorName(opts.authorUrl).then((authorName) => {
-      if (!authorName) return;
-      const dp = document.createElement("button");
-      dp.className = "open";
-      dp.textContent = "@" + authorName + " · profile pic";
-      dp.addEventListener("click", () => { urlInput.value = authorName; downloadBtn.click(); });
-      metaEl.querySelector(".row").insertBefore(dp, open);
-    });
-  }
-
   data.items.forEach((item, i) => {
     const box = document.createElement("div");
     box.className = "item";
@@ -888,14 +785,14 @@ async function renderItems(data, opts, input) {
     dlLink.target = "_blank";
     dlLink.rel = "noopener noreferrer";
     dlLink.textContent = "Download " + label;
-    dlLink.title = "Downloads straight to your device (no app needed).";
+    dlLink.title = "Downloads straight to your device.";
     row.appendChild(dlLink);
 
     const saveBtn = document.createElement("button");
     saveBtn.className = "dl-btn alt";
     saveBtn.disabled = true;
     saveBtn.textContent = "Save copy…";
-    saveBtn.title = "Saves with a clean filename through the app.";
+    saveBtn.title = "Saves with a clean filename.";
     row.appendChild(saveBtn);
 
     const audioBtn = item.kind === "video" ? document.createElement("button") : null;
@@ -903,14 +800,13 @@ async function renderItems(data, opts, input) {
       audioBtn.className = "dl-btn alt";
       audioBtn.disabled = true;
       audioBtn.textContent = "Audio (MP3)";
-      audioBtn.title = "Extracts the reel's audio as an MP3, converted in your browser.";
+      audioBtn.title = "Extracts audio as MP3.";
       row.appendChild(audioBtn);
     }
     box.appendChild(row);
 
     card.appendChild(box);
 
-    /* Preview loads straight from Instagram's CDN (cross-origin works for <img>/<video>). */
     frame.innerHTML = "";
     if (item.kind === "video") {
       const v = document.createElement("video");
@@ -932,7 +828,6 @@ async function renderItems(data, opts, input) {
       frame.appendChild(im);
     }
 
-    /* Fetch the actual bytes (via the proxy when configured) for Save copy / MP3. */
     fetchBlob(item.url).then(async (blob) => {
       const mb = (blob.size / 1048576).toFixed(1);
       const bytes = item.kind === "video" ? new Uint8Array(await blob.arrayBuffer()) : null;
@@ -946,7 +841,7 @@ async function renderItems(data, opts, input) {
           audioBtn.textContent = "Preparing audio…";
           if (!ffmpegReady) {
             spinnerCtn.classList.remove("hidden");
-            spinnerText.textContent = "Downloading audio converter (one-time, ~30 MB)…";
+            spinnerText.textContent = "Downloading audio converter (one-time)…";
           }
           try {
             const mp3 = await convertToMp3(bytes);
@@ -965,13 +860,11 @@ async function renderItems(data, opts, input) {
     }).catch(() => {
       const note = document.createElement("div");
       note.className = "frame-hint";
-      note.textContent = "Preview shown above. Media host is busy — use the Download button, or retry in a moment.";
+      note.textContent = "Preview shown above. Media host is busy — use the Download button.";
       frame.appendChild(note);
       saveBtn.textContent = "Save copy (busy)";
-      saveBtn.title = "The media host is throttling right now — use the Download button, or retry in a moment.";
       if (audioBtn) {
         audioBtn.textContent = "Audio (needs preview)";
-        audioBtn.title = "Audio conversion needs the preview download to succeed. Try again shortly.";
       }
     });
   });
@@ -983,7 +876,6 @@ async function renderPost(data, input) {
     openUrl: "https://www.instagram.com/reel/" + data.code + "/",
     label: data.items.length > 1 ? data.items.length + " media items" : "1 media item",
     filePrefix: "instagram_" + data.code,
-    authorUrl: "https://www.instagram.com/reel/" + data.code + "/",
     historyKind: "post",
     historyLabel: data.code,
   }, input);
@@ -1050,7 +942,7 @@ async function renderDp(username, input) {
       triggerSave(blob, username + "_profile_pic_" + nw + "x" + nh + ".jpg");
     } catch (e) {
       window.open(avatar.url, "_blank");
-      showError("Your browser blocked the direct download, so I opened the picture in a new tab — right-click it and choose \"Save image as…\".");
+      showError("Your browser blocked direct download. Opened picture in new tab — right click and save image.");
     }
   };
   addHistory({ kind: "dp", label: "@" + username, input });
