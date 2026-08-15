@@ -1417,9 +1417,22 @@ html[data-theme="dark"] .theme-dd .i-moon { display: none; }
 .download-card .card-body { padding: 22px; }
 .download-card h1 { font-size: 18px; letter-spacing: -.01em; margin: 0 0 14px; font-weight: 600; }
 .searchbox { display: flex; gap: 10px; align-items: center; }
-.searchbox .input { flex: 1; min-width: 0; transition: border-color .15s ease; }
-.searchbox .input:hover { border-color: rgb(var(--primary)); }
-.searchbox .input:focus { border-color: rgb(var(--primary)); }
+.searchbox .input-wrap { position: relative; flex: 1; min-width: 0; display: flex; }
+.searchbox .input-wrap .input { flex: 1; min-width: 0; max-width: none; transition: border-color .15s ease; }
+.searchbox .input-wrap .input:hover { border-color: rgb(var(--primary)); }
+.searchbox .input-wrap .input:focus { border-color: rgb(var(--primary)); }
+.ph-scroll {
+  position: absolute; left: 1rem; right: 1rem; top: 0; bottom: 0;
+  display: none; align-items: center; overflow: hidden;
+  pointer-events: none;
+  color: rgb(var(--content3)); font-size: 1.125rem; line-height: 1.5; white-space: nowrap;
+}
+.searchbox .input-wrap:not(:focus-within):not(.has-val) .ph-scroll { display: flex; }
+.ph-marquee { display: flex; align-items: center; }
+.ph-marquee.marq-on { animation: phmarq 11s linear infinite; will-change: transform; }
+.ph-copy { white-space: nowrap; padding-right: 48px; }
+@keyframes phmarq { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .ph-marquee.marq-on { animation: none; } }
 #downloadBtn { margin-top: 10px; }
 .hint { font-size: 12.5px; color: rgb(var(--content3)); margin: 0; line-height: 1.55; }
 .hint b { color: rgb(var(--content2)); font-weight: 600; }
