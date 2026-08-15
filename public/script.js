@@ -707,14 +707,22 @@ function convertToMp3(bytes) {
 /* ---------------- DP (profile picture) ---------------- */
 
 async function resolveAvatar(username) {
-  // 1) Worker API for profile info (HTTPS)
+  const targetUrl = "https://bj-insta-profile-info.mmabbas011687.workers.dev/info?username=" + encodeURIComponent(username);
+  
+  // 1) Wrapped Proxy API to bypass missing CORS headers
   try {
-    const jsonText = await getText("https://bj-insta-profile-info.mmabbas011687.workers.dev/info?username=" + encodeURIComponent(username));
-    const data = JSON.parse(jsonText);
-    if (data && data.pic) {
-      return { url: cleanUrl(data.pic), src: "profile-info" };
+    const response = await fetch("https://api.allorigins.win/get?url=" + encodeURIComponent(targetUrl));
+    const wrappedData = await response.json();
+    
+    if (wrappedData && wrappedData.contents) {
+      const data = JSON.parse(wrappedData.contents);
+      if (data && data.pic) {
+        return { url: cleanUrl(data.pic), src: "profile-info" };
+      }
     }
-  } catch (e) {}
+  } catch (e) {
+    console.warn("DP proxy lookup failed:", e);
+  }
 
   // 2) Optional Cloudflare Worker Proxy Fallback
   if (PROXY || (window.root && window.root.superFetch)) {
@@ -724,7 +732,7 @@ async function resolveAvatar(username) {
     } catch (e) {}
   }
 
-  throw new Error("Couldn't find a profile picture for @" + username + " (the profile may be private or deleted).");
+  throw new Error("Couldn't find a profile picture for @" + username + " (the API may be blocked or the profile is private).");
 }
 
 /* ---------------- UI renderers ---------------- */
