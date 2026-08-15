@@ -1,7 +1,7 @@
 /* Instadrop service worker — enables "Add to Home Screen" install + offline cache.
    Bump CACHE on every release so browsers fetch fresh files after a deploy. */
-var CACHE = "instadrop-v2";
-var CORE = ["/", "/index.html", "/styles.css", "/script.js", "/favicon.ico", "/logo.png", "/brand.png", "/manifest.webmanifest"];
+var CACHE = "instadrop-v3";
+var CORE = ["/", "/index.html", "/styles.css", "/script.js", "/favicon.ico", "/logo.png", "/brand.png", "/manifest.webmanifest", "/apple-touch-icon-light.png", "/apple-touch-icon-dark.png"];
 
 self.addEventListener("install", function (e) {
   e.waitUntil(
