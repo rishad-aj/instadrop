@@ -1,6 +1,11 @@
 /* ============================================================
-   ReelSaver - script.js
-   Unminified, standalone application logic.
+   Instadrop - script.js
+   Standalone application logic.
+   Free, keyless resolution: every media type (reels, posts,
+   carousels, active stories, highlights AND profile pictures)
+   is tried against several free downloader APIs + Instagram's
+   own pages (fetched server-side via a CORS proxy), so nothing
+   needs to be deployed or configured.
    ============================================================ */
 
 /* Network helper: uses Perchance's superFetch proxy when available
@@ -10,10 +15,243 @@ const fetchLike = (typeof window.root !== 'undefined' && window.root && window.r
   ? window.root.superFetch.bind(window.root)
   : window.fetch.bind(window);
 
+/* Cloudflare Worker proxy helpers. When PROXY is set, Instagram pages and
+   media blobs are resolved through it (browsers can't fetch Instagram directly
+   due to CORS). This is optional — everything works free without it. */
+function proxyResolve(path, body) {
+  if (PROXY) {
+    return fetch(PROXY + path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).then(async (res) => {
+      if (!res.ok) {
+        let msg = "Proxy error (HTTP " + res.status + ").";
+        try { const j = await res.json(); if (j.error) msg = j.error; } catch (e) {}
+        throw new Error(msg);
+      }
+      return res.json();
+    }).catch((err) => {
+      if (typeof window !== "undefined" && window.root && window.root.superFetch) {
+        return resolveLocally(path, body);
+      }
+      throw err;
+    });
+  }
+  if (typeof window !== "undefined" && window.root && window.root.superFetch) {
+    return resolveLocally(path, body);
+  }
+  return null;
+}
+function proxyFileUrl(url) { return PROXY ? PROXY + "/file?url=" + encodeURIComponent(url) : url; }
+
+/* ---------- local resolution (perchance preview) ---------- */
+
+function deepFindKey(o, key) {
+  if (!o || typeof o !== "object") return null;
+  if (key in o) return o[key];
+  for (const v of Object.values(o)) {
+    const r = deepFindKey(v, key);
+    if (r !== null && r !== undefined) return r;
+  }
+  return null;
+}
+function jsonScriptBlocks(html) {
+  return (html.match(/<script type="application\/json"[^>]*>([\s\S]*?)<\/script>/g) || []).map((raw) => {
+    const m = raw.match(/^<script type="application\/json"[^>]*>([\s\S]*?)<\/script>$/);
+    return m ? m[1] : "";
+  });
+}
+function largestCandidate(list) {
+  return list ? list.reduce((a, b) => (a.height * a.width >= b.height * b.width ? a : b)) : null;
+}
+function normalizeItems(it) {
+  const out = [];
+  if (!it || typeof it !== "object") return out;
+  const img = it.image_versions2 ? largestCandidate(it.image_versions2.candidates) : null;
+  const thumb = img ? img.url : it.display_url || null;
+  const vid = it.video_versions ? largestCandidate(it.video_versions) : null;
+  const videoUrl = vid ? vid.url : it.video_url || null;
+  if (videoUrl) out.push({ kind: "video", thumb, url: videoUrl });
+  else if (thumb) out.push({ kind: "image", thumb, url: thumb });
+  if (Array.isArray(it.carousel_media)) for (const c of it.carousel_media) out.push(...normalizeItems(c));
+  return out;
+}
+function itemsFromConnection(conn) {
+  const items = [];
+  for (const e of conn.edges || []) for (const it of (e.node && e.node.items) || []) items.push(...normalizeItems(it));
+  return items;
+}
+function resolvePageFromHtml(html, keys) {
+  for (const b of jsonScriptBlocks(html)) {
+    let j;
+    try { j = JSON.parse(b); } catch (e) { continue; }
+    for (const key of keys) {
+      const found = deepFindKey(j, key);
+      if (!found) continue;
+      if (key === "xdt_api__v1__feed__reels_media__connection") return itemsFromConnection(found);
+      if (key === "xdt_api__v1__media__shortcode__web_info") {
+        const items = [];
+        for (const it of found.items || []) items.push(...normalizeItems(it));
+        return items;
+      }
+      if (key === "xdt_shortcode_media") return normalizeItems(found);
+    }
+  }
+  return [];
+}
+async function resolveLocally(path, body) {
+  if (path === "/profile") {
+    const html = await fetchLike("https://www.instagram.com/" + encodeURIComponent(body.username) + "/").then((r) => r.text());
+    let user = null;
+    for (const b of jsonScriptBlocks(html)) {
+      let j;
+      try { j = JSON.parse(b); } catch (e) { continue; }
+      user = deepFindKey(j, "xig_user_by_username");
+      if (user) break;
+    }
+    if (!user || !user.profile_pic_url) throw new Error("Couldn't find that profile.");
+    return { username: user.username, fullName: user.full_name, profilePicUrl: user.profile_pic_url };
+  }
+  const keys = path === "/story"
+    ? ["xdt_api__v1__feed__reels_media__connection"]
+    : ["xdt_api__v1__media__shortcode__web_info", "xdt_shortcode_media", "xdt_api__v1__feed__reels_media__connection"];
+  const html = await fetchLike(body.url).then((r) => r.text());
+  const items = resolvePageFromHtml(html, keys);
+  if (!items.length) throw new Error("No downloadable media was returned — the post/highlight may be private or deleted.");
+  return { items };
+}
+
 const API = "https://api.downloadgram.org/media";
 const API_STORY = "https://api.downloadgram.org/story";
+/* PROXY is optional. The free setup (PROXY = "") resolves everything through
+   free keyless APIs and Instagram's own pages fetched via free CORS proxies. */
+const PROXY = "";
 const FFMPEG_CORE = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js";
 const FFMPEG_WASM = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm";
+
+/* ---------- free keyless fetch helpers ---------- */
+
+/* Free CORS proxies: let a plain static host read pages (Instagram, Imginn)
+   that would otherwise be CORS-blocked in the browser. */
+const CORS_PROXIES = [
+  (u) => "https://corsproxy.io/?url=" + encodeURIComponent(u),
+  (u) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u),
+  (u) => "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(u),
+];
+
+const HAS_SUPERFETCH = typeof window !== "undefined" && !!window.root && !!window.root.superFetch;
+
+async function serverFetch(url, opts) {
+  try {
+    return await fetchLike(url, opts);
+  } catch (e) {
+    if (HAS_SUPERFETCH) throw e; // superFetch is already a server-side proxy
+  }
+  /* Static host: retry through free CORS proxies. */
+  let lastErr = "Network error";
+  for (const build of CORS_PROXIES) {
+    try {
+      const res = await withTimeout(fetchLike(build(url)), 8000, "proxy timed out");
+      if (res && res.ok) return res;
+      lastErr = "HTTP " + (res && res.status);
+    } catch (e) {
+      lastErr = String(e && e.message || e);
+    }
+  }
+  throw new Error(lastErr);
+}
+
+async function getText(url) {
+  const res = await serverFetch(url);
+  return await res.text();
+}
+async function postText(url, body) {
+  const res = await withTimeout(fetchLike(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }), 25000, "service timed out");
+  if (!res || !res.ok) throw new Error("HTTP " + (res && res.status || "error"));
+  return await res.text();
+}
+
+function cleanUrl(u) { return String(u || "").replace(/\\\//g, "/").replace(/&amp;/g, "&"); }
+
+/* Normalize the JSON shape of any free downloader API into {kind,thumb,url} items. */
+function jsonToItems(text) {
+  let j;
+  try { j = JSON.parse(text); } catch (e) { return []; }
+  const items = [];
+  const seen = new Set();
+  const push = (raw, thumb, kind) => {
+    const u = cleanUrl(raw);
+    if (!/^https?:\/\//.test(u)) return;
+    if (!/(cdninstagram\.com|imginn\.com|fbcdn\.net)/.test(u)) return;
+    if (seen.has(u)) return;
+    seen.add(u);
+    items.push({ kind: kind || (/\.mp4(\?|&|$)/i.test(u) ? "video" : "image"), thumb: thumb ? cleanUrl(thumb) : null, url: u });
+  };
+  const scan = (o) => {
+    if (!o || typeof o !== "object") return;
+    if (typeof o.url === "string" && /^https?:\/\//.test(o.url)) push(o.url, o.thumb || o.thumbnail);
+    if (typeof o.video === "string" && /^https?:\/\//.test(o.video)) push(o.video, o.thumbnail || o.thumb, "video");
+    if (typeof o.video_audio === "string" && /^https?:\/\//.test(o.video_audio)) push(o.video_audio, o.thumbnail || o.thumb, "video");
+    if (typeof o.display_url === "string") push(o.display_url, o.display_url, "image");
+    if (typeof o.link === "string" && /^https?:\/\//.test(o.link)) push(o.link, o.thumbnail || o.thumb);
+    if (typeof o.thumbnail === "string" && /^https?:\/\//.test(o.thumbnail)) push(o.thumbnail, o.thumbnail, "image");
+    if (o.image_versions2 && Array.isArray(o.image_versions2.candidates)) {
+      const c = o.image_versions2.candidates.slice().sort((a, b) => (b.width * b.height) - (a.width * a.height))[0];
+      if (c) push(c.url, c.url, "image");
+    }
+    if (Array.isArray(o.video_versions)) {
+      const v = o.video_versions.slice().sort((a, b) => (b.width * b.height) - (a.width * a.height))[0];
+      if (v) push(v.url, v.url, "video");
+    }
+    if (Array.isArray(o.media)) { for (const m of o.media) scan(m); return; }
+    if (Array.isArray(o.stories)) { for (const m of o.stories) scan(m); return; }
+    if (Array.isArray(o.items)) { for (const m of o.items) scan(m); return; }
+    if (Array.isArray(o.medias)) { for (const m of o.medias) scan(m); return; }
+    for (const v of Object.values(o)) if (v && typeof v === "object") scan(v);
+  };
+  scan(j);
+  return items;
+}
+
+/* Imginn story pages list direct CDN media for a user's active stories. */
+function parseImginnMedia(html) {
+  const items = [];
+  const seen = new Set();
+  const add = (raw, kind) => {
+    const u = cleanUrl(raw);
+    if (!/^https?:\/\//.test(u)) return;
+    if (!/(scontent[0-9a-z-]*\.cdninstagram\.com|imginn\.com)/.test(u)) return;
+    if (/t51\.2885-19/.test(u)) return;
+    if (!/\.(mp4|jpg|jpeg|webp)(\?|&|$)/i.test(u)) return;
+    if (seen.has(u)) return;
+    seen.add(u);
+    const isVid = kind === "video" || /\.mp4(\?|&|$)/i.test(u);
+    items.push({ kind: isVid ? "video" : "image", thumb: isVid ? null : u, url: u });
+  };
+  for (const m of html.matchAll(/<a[^>]+href="([^"]+)"/g)) add(m[1]);
+  for (const m of html.matchAll(/<video[^>]+src="([^"]+)"/g)) add(m[1], "video");
+  for (const m of html.matchAll(/<img[^>]+src="([^"]+)"/g)) add(m[1], "image");
+  return items;
+}
+
+/* Try a list of free downloader APIs in order; return the first that yields media. */
+async function firstWorking(candidates) {
+  for (const c of candidates) {
+    try {
+      const t = await withTimeout(c.fetch(), 25000, c.name + " timed out");
+      const items = c.parse(t);
+      if (items && items.length) return items;
+    } catch (e) {
+      // keep trying the next free service
+    }
+  }
+  return [];
+}
 
 const urlInput = document.getElementById("urlInput");
 const downloadBtn = document.getElementById("downloadBtn");
@@ -198,7 +436,7 @@ function parseInput(raw) {
   if (/instagram\.com\/stories\//.test(s)) return { kind: "story", url: s };
   const code = extractShortcode(s);
   if (code) return { kind: "post", code };
-  const prof = s.match(/instagram\.com\/([A-Za-z0-9._]{1,30})\/?(\?.*)?$/);
+  const prof = s.match(/instagram\.com\/([A-Za-z0-9._]{1,30})\/?(?:\?.*)?$/);
   if (prof && !/^(reel|p|reels|tv|stories|highlights)$/.test(prof[1])) return { kind: "dp", username: prof[1] };
   if (/^[A-Za-z0-9._]{1,30}$/.test(s)) return { kind: "dp", username: s };
   return { kind: "unknown" };
@@ -206,41 +444,17 @@ function parseInput(raw) {
 
 function decodeDgResponse(body) {
   let html = null;
-  const loader = { style: {} };
-  const fakeDoc = {
-    getElementById(id) {
-      if (id === "div_download") return { set innerHTML(v) { html = v; } };
-      return { remove() {} };
-    },
-  };
-  new Function("loader", "document", "showAd", body)(loader, fakeDoc, () => {});
+  try {
+    const loader = { style: {} };
+    const fakeDoc = {
+      getElementById(id) {
+        if (id === "div_download") return { set innerHTML(v) { html = v; } };
+        return { remove() {} };
+      },
+    };
+    new Function("loader", "document", "showAd", body)(loader, fakeDoc, () => {});
+  } catch (e) {}
   return html;
-}
-
-async function fetchMedia(url) {
-  const code = extractShortcode(url);
-  if (!code) throw new Error("That doesn't look like an Instagram reel/post link.");
-  const cleanUrl = "https://www.instagram.com/reel/" + code + "/";
-  const res = await withTimeout(
-    fetchLike(API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: cleanUrl }),
-    }),
-    90000,
-    "The downloader service is slow right now — try again in a moment."
-  );
-  const body = await res.text();
-  if (!res.ok) {
-    let msg = "The downloader service failed (HTTP " + res.status + "). Try again in a moment.";
-    try { const j = JSON.parse(body); if (j.error || j.message) msg = String(j.error || j.message); } catch (e) {}
-    throw new Error(msg);
-  }
-  const html = decodeDgResponse(body);
-  if (!html) throw new Error("No downloadable media was returned — the post may be private or deleted.");
-  const items = extractItems(html);
-  if (!items.length) throw new Error("No downloadable media was found in that post.");
-  return { code, items };
 }
 
 function extractItems(html) {
@@ -248,7 +462,7 @@ function extractItems(html) {
   const items = [];
   for (const block of doc.querySelectorAll(".download-items")) {
     const img = block.querySelector("img");
-    const link = block.querySelector("a.abutton");
+    const link = block.querySelector("a");
     const thumb = img && img.getAttribute("src");
     const mediaUrl = link && link.getAttribute("href");
     if (!mediaUrl) continue;
@@ -258,26 +472,120 @@ function extractItems(html) {
   return items;
 }
 
-async function fetchStoryMedia(url) {
-  const res = await withTimeout(
-    fetchLike(API_STORY, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
-    }),
-    90000,
-    "The downloader service is slow right now — try again in a moment."
-  );
-  const body = await res.text();
-  if (!res.ok) {
-    let msg = "Instagram won't serve this " + (url.includes("/highlights/") ? "highlight" : "story") + " anonymously (HTTP " + res.status + ").";
-    try { const j = JSON.parse(body); if (j.message) msg = String(j.message); } catch (e) {}
-    throw new Error(msg);
+async function fetchMedia(url) {
+  const code = extractShortcode(url);
+  if (!code) throw new Error("That doesn't look like an Instagram reel/post link.");
+  const cleanUrl = "https://www.instagram.com/reel/" + code + "/";
+
+  if (PROXY || (window.root && window.root.superFetch)) {
+    try {
+      const data = await withTimeout(proxyResolve("/media", { url: cleanUrl }), 60000, "The download service timed out — try again.");
+      if (data && data.items && data.items.length) return { code, items: data.items };
+    } catch (e) {
+      // Fall through to the free APIs below.
+    }
   }
-  const html = decodeDgResponse(body);
-  if (!html) throw new Error("No downloadable media was returned.");
-  const items = extractItems(html);
-  if (!items.length) throw new Error("No downloadable media was found.");
+
+  const items = await firstWorking([
+    {
+      name: "downloadgram",
+      fetch: () => postText(API, { url: cleanUrl }),
+      parse: (t) => { const html = decodeDgResponse(t); return html ? extractItems(html) : []; },
+    },
+    {
+      name: "ddvideo",
+      fetch: () => getText("https://api.dd.video/api/instagram?url=" + encodeURIComponent(cleanUrl)),
+      parse: jsonToItems,
+    },
+    {
+      name: "snapinsta",
+      fetch: () => getText("https://snapinsta.app/api/instagram?url=" + encodeURIComponent(cleanUrl)),
+      parse: jsonToItems,
+    },
+    {
+      name: "indown",
+      fetch: () => getText("https://indown.io/api/info?url=" + encodeURIComponent(cleanUrl)),
+      parse: jsonToItems,
+    },
+    {
+      name: "instasave",
+      fetch: () => getText("https://instasave.tech/api/instagram?url=" + encodeURIComponent(cleanUrl)),
+      parse: jsonToItems,
+    },
+  ]);
+  if (!items.length) {
+    throw new Error("No downloadable media was found in that post — the free services are busy right now. Try again in a moment, or check the post is public.");
+  }
+  return { code, items };
+}
+
+async function fetchStoryMedia(url) {
+  const isHl = /\/highlights\//.test(url);
+
+  if (PROXY || (window.root && window.root.superFetch)) {
+    try {
+      const data = await withTimeout(proxyResolve("/story", { url }), 60000, "The download service timed out — try again.");
+      if (data && data.items && data.items.length) return { items: data.items };
+    } catch (e) {
+      // Fall through to the free APIs below.
+    }
+  }
+
+  let items = await firstWorking([
+    // NEW: primary API for stories & highlights
+    {
+      name: "mn-bots",
+      fetch: () => getText("https://instagram-downloader.mn-bots.workers.dev/?url=" + encodeURIComponent(url)),
+      parse: (t) => {
+        let j;
+        try { j = JSON.parse(t); } catch (e) { return []; }
+        if (!j.success || !j.media) return [];
+        return j.media.map(m => ({
+          kind: (m.type === "video" || /\.mp4/i.test(m.url)) ? "video" : "image",
+          thumb: m.thumb || null,
+          url: m.url || m.server2 || null,
+        })).filter(m => m.url);
+      },
+    },
+    {
+      name: "downloadgram",
+      fetch: () => postText(API_STORY, { url }),
+      parse: (t) => { const html = decodeDgResponse(t); return html ? extractItems(html) : []; },
+    },
+    {
+      name: "snapinsta",
+      fetch: () => getText("https://snapinsta.app/api/instagram?url=" + encodeURIComponent(url)),
+      parse: jsonToItems,
+    },
+    {
+      name: "ddvideo",
+      fetch: () => getText("https://api.dd.video/api/instagram?url=" + encodeURIComponent(url)),
+      parse: jsonToItems,
+    },
+    {
+      name: "indown",
+      fetch: () => getText("https://indown.io/api/info?url=" + encodeURIComponent(url)),
+      parse: jsonToItems,
+    },
+  ]);
+
+  if (!items.length) {
+    const user = (url.match(/stories\/([^\/]+)\//) || [])[1];
+    if (user && user !== "highlights") {
+      try {
+        const html = await getText("https://imginn.com/stories/" + encodeURIComponent(user) + "/");
+        items = parseImginnMedia(html);
+      } catch (e) {}
+    }
+  }
+
+  if (!items.length) {
+    throw new Error(
+      isHl
+        ? "Couldn't resolve that highlight — the free services are busy right now, or the highlight is private. Try again in a moment."
+        : "Couldn't resolve that story right now — active stories expire after 24 hours and may be private. Try again in a moment."
+    );
+  }
   return { items };
 }
 
@@ -294,16 +602,20 @@ async function getAuthorName(url) {
 }
 
 async function fetchBlob(url, tries = 2) {
+  const viaProxy = PROXY ? proxyFileUrl(url) : url;
+  const urls = PROXY && viaProxy !== url ? [viaProxy, url] : [url];
   let lastErr;
   for (let i = 0; i < tries; i++) {
-    try {
-      const res = await withTimeout(fetchLike(url), 40000, "The media host is busy right now — trying again, then try a fresh 'Download' if it keeps failing.");
-      if (!res.ok) throw new Error("Download failed (HTTP " + res.status + ").");
-      return await res.blob();
-    } catch (e) {
-      lastErr = e;
-      if (i < tries - 1) await sleep(2500);
+    for (const target of urls) {
+      try {
+        const res = await withTimeout(fetchLike(target), 60000, "The media host is busy right now — trying again, then try a fresh 'Download' if it keeps failing.");
+        if (!res.ok) throw new Error("Download failed (HTTP " + res.status + ").");
+        return await res.blob();
+      } catch (e) {
+        lastErr = e;
+      }
     }
+    if (i < tries - 1) await sleep(2500);
   }
   throw lastErr;
 }
@@ -440,80 +752,71 @@ function convertToMp3(bytes) {
   return run;
 }
 
-/* ---------------- DP ---------------- */
-
-async function fetchProfilePage(username) {
-  for (let i = 0; i < 4; i++) {
-    const res = await withTimeout(
-      fetchLike("https://www.instagram.com/" + encodeURIComponent(username) + "/"),
-      60000,
-      "Fetching that profile took too long — try again."
-    );
-    if (res.status === 200) return await res.text();
-    if (res.status === 429) { await sleep(3000); continue; }
-    throw new Error("Instagram returned HTTP " + res.status + " for that profile.");
-  }
-  throw new Error("Instagram is rate-limiting requests right now — wait a minute and try again.");
-}
+/* ---------------- DP (profile picture) ---------------- */
 
 function extractAvatar(html) {
-  const m = html.match(/"profile_pic_url":"([^"]+)"/);
+  const m = html.match(/"profile_pic_url":\s*"([^"]+)"/);
   if (m) return m[1].replace(/\\\//g, "/");
   const img = html.match(/<img[^>]+alt="[^"]*profile picture[^"]*"[^>]+src="([^"]+)"/);
   if (img) return img[1];
   return null;
 }
 
-async function resolveAvatar(username) {
-  const candidates = [];
-  const push = (u, src) => {
-    if (!u) return;
-    const clean = u.replace(/\\\//g, "/").replace(/&amp;/g, "&");
-    if (/static\.cdninstagram\.com|\/rsrc\.php/.test(clean)) return;
-    candidates.push({ url: clean, src });
-  };
-
-  try {
-    const res = await withTimeout(
-      fetchLike("https://www.instagram.com/api/v1/oembed/?url=" + encodeURIComponent("https://www.instagram.com/" + encodeURIComponent(username) + "/")),
-      15000
-    );
-    if (res.ok) {
-      const j = await res.json();
-      push(j.thumbnail_url, "oembed");
-    }
-  } catch (e) {}
-
-  try {
-    const res = await withTimeout(
-      fetchLike("https://i.instagram.com/api/v1/users/web_profile_info/?username=" + encodeURIComponent(username)),
-      10000
-    );
-    if (res.ok) {
-      const j = await res.json();
-      const user = j.data && j.data.user;
-      push(user && (user.profile_pic_url_hd || user.profile_pic_url), "api");
-    }
-  } catch (e) {}
-
-  try {
-    const html = await fetchProfilePage(username);
-    push(extractAvatar(html), "page");
-  } catch (e) {}
-
-  const avatar = candidates[0];
-  if (!avatar) throw new Error("Couldn't find a profile picture for @" + username + " (private or invalid profile?).");
-  return avatar;
+/* Instagram serves anonymous visitors a 150x150 pic — request the larger
+   rendition from the CDN, falling back to the original if refused. */
+function tryBigger(url) {
+  const bigger = cleanUrl(url).replace(/_s150x150_/, "_s640x640_");
+  if (bigger === cleanUrl(url)) return Promise.resolve(url);
+  return new Promise((resolve) => {
+    const im = new Image();
+    const fail = () => resolve(url);
+    const done = () => resolve(bigger);
+    im.onload = done;
+    im.onerror = fail;
+    setTimeout(fail, 8000);
+    im.src = bigger;
+  });
 }
 
-function loadImageBlob(blob) {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(blob);
-    const img = new Image();
-    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Couldn't load the image.")); };
-    img.src = url;
-  });
+async function resolveAvatar(username) {
+  // 1) NEW: profile info API (returns full pic URL)
+  try {
+    const jsonText = await getText("http://bj-insta-profile-info.mmabbas011687.workers.dev/info?username=" + encodeURIComponent(username));
+    const data = JSON.parse(jsonText);
+    if (data && data.pic) {
+      // The returned pic is already the highest quality we can get
+      return { url: cleanUrl(data.pic), src: "profile-info" };
+    }
+  } catch (e) {}
+
+  /* 2) Instagram's own profile page (via server fetch / CORS proxy). */
+  if (PROXY || (window.root && window.root.superFetch)) {
+    try {
+      const data = await withTimeout(proxyResolve("/profile", { username }), 60000, "Profile lookup timed out.");
+      if (data && data.profilePicUrl) return { url: await tryBigger(data.profilePicUrl), src: "instagram" };
+    } catch (e) {}
+  }
+  try {
+    const html = await getText("https://www.instagram.com/" + encodeURIComponent(username) + "/");
+    let url = null;
+    for (const b of jsonScriptBlocks(html)) {
+      let j;
+      try { j = JSON.parse(b); } catch (e) { continue; }
+      const u = deepFindKey(j, "xig_user_by_username");
+      if (u && u.profile_pic_url) { url = u.profile_pic_url; break; }
+    }
+    if (!url) url = extractAvatar(html);
+    if (url) return { url: await tryBigger(url), src: "instagram" };
+  } catch (e) {}
+
+  /* 3) Imginn profile viewer — serves a large (828px) avatar. */
+  try {
+    const html = await getText("https://imginn.com/" + encodeURIComponent(username) + "/");
+    const og = html.match(/<meta property="og:image" content="([^"]+)"/);
+    if (og) return { url: cleanUrl(og[1]), src: "imginn" };
+  } catch (e) {}
+
+  throw new Error("Couldn't find a profile picture for @" + username + " (the profile may be private or deleted).");
 }
 
 /* ---------------- UI renderers ---------------- */
@@ -607,30 +910,32 @@ async function renderItems(data, opts, input) {
 
     card.appendChild(box);
 
+    /* Preview loads straight from Instagram's CDN (cross-origin works for <img>/<video>). */
+    frame.innerHTML = "";
+    if (item.kind === "video") {
+      const v = document.createElement("video");
+      v.controls = true;
+      v.playsInline = true;
+      v.src = item.url;
+      const badge = document.createElement("span");
+      badge.className = "media-badge hidden";
+      v.addEventListener("loadedmetadata", () => {
+        badge.textContent = fmtDuration(v.duration) + " · " + v.videoWidth + "×" + v.videoHeight;
+        badge.classList.remove("hidden");
+      });
+      frame.appendChild(v);
+      frame.appendChild(badge);
+    } else {
+      const im = document.createElement("img");
+      im.src = item.url;
+      im.alt = "Instagram image";
+      frame.appendChild(im);
+    }
+
+    /* Fetch the actual bytes (via the proxy when configured) for Save copy / MP3. */
     fetchBlob(item.url).then(async (blob) => {
-      const objectUrl = URL.createObjectURL(blob);
       const mb = (blob.size / 1048576).toFixed(1);
       const bytes = item.kind === "video" ? new Uint8Array(await blob.arrayBuffer()) : null;
-      frame.innerHTML = "";
-      if (item.kind === "video") {
-        const v = document.createElement("video");
-        v.controls = true;
-        v.playsInline = true;
-        v.src = objectUrl;
-        const badge = document.createElement("span");
-        badge.className = "media-badge hidden";
-        v.addEventListener("loadedmetadata", () => {
-          badge.textContent = fmtDuration(v.duration) + " · " + v.videoWidth + "×" + v.videoHeight;
-          badge.classList.remove("hidden");
-        });
-        frame.appendChild(v);
-        frame.appendChild(badge);
-      } else {
-        const im = document.createElement("img");
-        im.src = objectUrl;
-        im.alt = "Instagram image";
-        frame.appendChild(im);
-      }
       saveBtn.disabled = false;
       saveBtn.textContent = "Save copy (" + mb + " MB)";
       saveBtn.onclick = () => triggerSave(blob, filename);
@@ -658,10 +963,9 @@ async function renderItems(data, opts, input) {
         };
       }
     }).catch(() => {
-      frame.innerHTML = "";
       const note = document.createElement("div");
       note.className = "frame-hint";
-      note.textContent = "Preview is busy right now — the Download button still works.";
+      note.textContent = "Preview shown above. Media host is busy — use the Download button, or retry in a moment.";
       frame.appendChild(note);
       saveBtn.textContent = "Save copy (busy)";
       saveBtn.title = "The media host is throttling right now — use the Download button, or retry in a moment.";
@@ -720,33 +1024,36 @@ async function renderDp(username, input) {
   card.appendChild(box);
 
   const avatar = await resolveAvatar(username);
-  const blob = await fetchBlob(avatar.url);
-  const img = await loadImageBlob(blob);
-  const nw = img.naturalWidth;
-  const nh = img.naturalHeight;
-  const objectUrl = URL.createObjectURL(blob);
   frame.innerHTML = "";
   const im = document.createElement("img");
-  im.src = objectUrl;
+  im.src = avatar.url;
   im.alt = "@" + username + " profile picture";
   frame.appendChild(im);
   const badge = document.createElement("span");
   badge.className = "media-badge";
-  badge.textContent = nw + "×" + nh + " · original";
+  badge.textContent = "…";
   frame.appendChild(badge);
+  const dims = await new Promise((res) => {
+    const probe = new Image();
+    probe.onload = () => res({ w: probe.naturalWidth, h: probe.naturalHeight });
+    probe.onerror = () => res(null);
+    probe.src = avatar.url;
+  });
+  const nw = dims ? dims.w : "?";
+  const nh = dims ? dims.h : "?";
+  badge.textContent = nw + "×" + nh + (dims ? " · original" : "");
   btn.disabled = false;
   btn.textContent = "Download profile pic (" + nw + "×" + nh + ")";
-  btn.onclick = () => triggerSave(blob, username + "_profile_pic_" + nw + "x" + nh + ".jpg");
+  btn.onclick = async () => {
+    try {
+      const blob = await withTimeout(fetchBlob(avatar.url, 1), 25000, "Download timed out.");
+      triggerSave(blob, username + "_profile_pic_" + nw + "x" + nh + ".jpg");
+    } catch (e) {
+      window.open(avatar.url, "_blank");
+      showError("Your browser blocked the direct download, so I opened the picture in a new tab — right-click it and choose \"Save image as…\".");
+    }
+  };
   addHistory({ kind: "dp", label: "@" + username, input });
-}
-
-function renderStory() {
-  const msg = document.createElement("div");
-  msg.className = "error";
-  msg.style.margin = "0";
-  msg.textContent = "That story isn't available anonymously right now — Instagram only shows active stories to logged-in accounts, and they expire after 24 hours. Highlights usually work here; reels, posts and profile pics work too.";
-  const card = wrapResult(msg);
-  resultCtn.appendChild(card);
 }
 
 /* ---------------- main action ---------------- */
@@ -778,7 +1085,7 @@ downloadBtn.addEventListener("click", async () => {
       }, input);
       scrollToResults();
     } catch (e) {
-      renderStory();
+      showError(e && e.message ? e.message : String(e));
     } finally {
       setBusy(false);
     }
@@ -792,7 +1099,7 @@ downloadBtn.addEventListener("click", async () => {
     else await renderDp(parsed.username, input);
     scrollToResults();
   } catch (e) {
-    showError(e.message);
+    showError(e && e.message ? e.message : String(e));
   } finally {
     setBusy(false);
   }
