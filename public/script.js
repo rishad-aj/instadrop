@@ -146,6 +146,21 @@ if (scrollToCardBtn) {
   });
 }
 
+/* scrolling placeholder: show the marquee overlay only while the box is empty & unfocused */
+const inputWrap = document.querySelector(".input-wrap");
+const phScroll = document.querySelector(".ph-scroll");
+const phMarquee = document.querySelector(".ph-marquee");
+if (inputWrap && urlInput) {
+  const syncPh = () => inputWrap.classList.toggle("has-val", urlInput.value.length > 0);
+  urlInput.addEventListener("input", syncPh);
+  syncPh();
+}
+if (phScroll && phMarquee) {
+  const syncMarq = () => phMarquee.classList.toggle("marq-on", phMarquee.scrollWidth > phScroll.clientWidth);
+  window.addEventListener("resize", syncMarq);
+  syncMarq();
+}
+
 /* paste button: read clipboard into the box, then auto-run if it's a valid link */
 const pasteBtn = document.getElementById("pasteBtn");
 if (pasteBtn) {
@@ -744,7 +759,7 @@ downloadBtn.addEventListener("click", async () => {
 
   const parsed = parseInput(input);
   if (parsed.kind === "unknown") {
-    showError("Paste a full Instagram link (reel/post/tv, story or highlight), a profile link, or a bare username.");
+    showError("Paste a full Instagram link (reel/post, story or highlight), a profile link, or a bare username.");
     return;
   }
   if (parsed.kind === "story" || parsed.kind === "highlight") {
