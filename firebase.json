@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "target": "instadrop",
     "public": "public",
     "ignore": [
       "firebase.json",
@@ -7,28 +8,6 @@
       "**/node_modules/**"
     ],
     "cleanUrls": true,
-    "trailingSlash": false,
-    "headers": [
-      {
-        "source": "**/*.@(png|jpg|jpeg|gif|webp|ico|svg)",
-        "headers": [
-          { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-        ]
-      },
-      {
-        "source": "**/*.@(css|js)",
-        "headers": [
-          { "key": "Cache-Control", "value": "public, max-age=86400" }
-        ]
-      },
-      {
-        "source": "/**",
-        "headers": [
-          { "key": "X-Content-Type-Options", "value": "nosniff" },
-          { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-          { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
-        ]
-      }
-    ]
+    "trailingSlash": false
   }
 }
