@@ -8,7 +8,7 @@
   <meta name="keywords" content="instagram downloader, instagram reels downloader, download instagram reels, instagram video download, instagram photo download, free, instadrop">
   <meta name="robots" content="index, follow">
   <meta name="author" content="Instadrop">
-  <link rel="canonical" href="https://instadrop.vercel.app/">
+  <link rel="canonical" href="https://instadrop.web.app/">
   <meta name="theme-color" content="#2563eb">
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#161616">
 
@@ -21,8 +21,8 @@
   <meta property="og:site_name" content="Instadrop">
   <meta property="og:title" content="Instadrop — Free Instagram Media Downloader">
   <meta property="og:description" content="Download Instagram reels, posts, carousels, profile pictures and story highlights in one click. 100% free, ad-free, no login required.">
-  <meta property="og:url" content="https://instadrop.vercel.app/">
-  <meta property="og:image" content="https://instadrop.vercel.app/og-image.png">
+  <meta property="og:url" content="https://instadrop.web.app/">
+  <meta property="og:image" content="https://instadrop.web.app/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Instadrop — Free Instagram media downloader">
@@ -30,14 +30,14 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Instadrop — Free Instagram Media Downloader">
   <meta name="twitter:description" content="Download Instagram reels, posts, carousels, profile pictures and highlights. Free, ad-free, no login.">
-  <meta name="twitter:image" content="https://instadrop.vercel.app/og-image.png">
+  <meta name="twitter:image" content="https://instadrop.web.app/og-image.png">
 
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
     "name": "Instadrop",
-    "url": "https://instadrop.vercel.app/",
+    "url": "https://instadrop.web.app/",
     "description": "Download Instagram reels, posts, carousels, profile pictures and story highlights in one click. 100% free, ad-free, no login required.",
     "applicationCategory": "UtilityApplication",
     "operatingSystem": "Any",
@@ -73,6 +73,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="styles.css">
+<link rel="manifest" href="manifest.webmanifest">
 
 
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
@@ -173,7 +174,7 @@
       <div class="hero-left reveal">
         <span class="hero-badge"><svg class="ic"><use href="#i-check"/></svg> 100% free &middot; Ad-free &middot; No login &middot; No limits</span>
         <h1><span class="accent">Instadrop</span> Download Instagram media in one click.</h1>
-        <p class="hero-sub">Reels, posts, carousels, profile pictures and story highlights &mdash; streamed straight to your device at full quality. Completely free and <strong>ad-free</strong>: nothing is stored, ever.</p>
+        <p class="hero-sub">Reels, posts, carousels, profile pictures, stories and highlights &mdash; streamed straight to your device at full quality. Completely free and <strong>ad-free</strong>: nothing is stored, ever.</p>
         <div class="hero-ctas">
           <button class="btn btn-primary btn-md btn-rounded" id="scrollToCardBtn" type="button"><svg class="ic" style="width:17px;height:17px;"><use href="#i-download"/></svg> Start downloading</button>
           <a class="btn btn-outline btn-md btn-rounded" href="#how">How it works</a>
@@ -185,11 +186,16 @@
           <div class="card-body">
             <h1>Paste your link below</h1>
             <div class="searchbox">
-              <input id="urlInput" class="input input-lg" type="text" placeholder="https://www.instagram.com/reel/… or @username" spellcheck="false" autocomplete="off">
+              <div class="input-wrap">
+                <input id="urlInput" class="input input-lg" type="text" spellcheck="false" autocomplete="off" aria-label="Paste an Instagram link or username">
+                <span class="ph-scroll" aria-hidden="true">
+                  <span class="ph-marquee"><span class="ph-copy">https://www.instagram.com/reel/... or @username https://www.instagram.com/example/... or @username</span><span class="ph-copy">https://www.instagram.com/reel/... or @username https://www.instagram.com/example/... or @username</span></span>
+                </span>
+              </div>
               <button id="pasteBtn" class="btn btn-outline btn-lg btn-rounded" type="button"><svg class="ic" style="width:18px;height:18px;"><use href="#i-paste"/></svg> Paste</button>
             </div>
             <button id="downloadBtn" class="btn btn-primary btn-lg btn-rounded btn-block" type="button"><svg class="ic" style="width:18px;height:18px;"><use href="#i-download"/></svg> Download</button>
-            <p class="hint">Works with reel / post / tv links (also with the username segment, e.g. <b>instagram.com/name/p/…</b>), profile links, carousels, and <b>story highlights</b>.</p>
+            <p class="hint">Works with reels, posts, carousels, profile pages, and both <b>stories</b> and <b>highlights</b> &mdash; with or without the username segment (e.g. <b>instagram.com/name/p/…</b>). Paste any Instagram link or a bare <b>@username</b>.</p>
             <div class="hist hidden" id="histRow"></div>
             <div id="spinnerCtn" class="spinner-ctn hidden">
               <div class="spinner"></div>
@@ -357,6 +363,7 @@
       <h2>Legal</h2>
       <ul>
         <li><a href="#faq">Respect creators' rights</a></li>
+        <li><a href="terms.html">Terms &amp; Conditions</a></li>
         <li><a href="#faq">Personal use only</a></li>
         <li><a href="#faq">Not affiliated with Meta</a></li>
       </ul>
