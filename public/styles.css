@@ -1557,7 +1557,7 @@ details.accordion.faq-item {
   width: 200px;
   height: 200px;
   max-width: 100%;
-  border-radius: 50%;
+  border-radius: 14px;
   object-fit: cover;
   border: 5px solid rgb(var(--gray-1));
   outline: 1px solid rgb(var(--gray-6));
