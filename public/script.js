@@ -451,6 +451,11 @@ async function fetchMedia(url) {
 
   const items = await firstWorking([
     {
+      name: "thakur-infopd",
+      fetch: () => getText("https://insta.thakur-infopd.workers.dev/?url=" + encodeURIComponent(cleanUrl)),
+      parse: jsonToItems,
+    },
+    {
       name: "mn-bots",
       fetch: () => getText("https://instagram-downloader.mn-bots.workers.dev/?url=" + encodeURIComponent(cleanUrl)),
       parse: (t) => {
@@ -507,6 +512,11 @@ async function fetchStoryMedia(url) {
   }
 
   const items = await firstWorking([
+    {
+      name: "thakur-infopd",
+      fetch: () => getText("https://insta.thakur-infopd.workers.dev/?url=" + encodeURIComponent(url)),
+      parse: jsonToItems,
+    },
     {
       name: "mn-bots",
       fetch: () => getText("https://instagram-downloader.mn-bots.workers.dev/?url=" + encodeURIComponent(url)),
@@ -707,11 +717,29 @@ function convertToMp3(bytes) {
 /* ---------------- DP (profile picture) ---------------- */
 
 async function resolveAvatar(username) {
-  const targetUrl = "https://bj-insta-profile-info.mmabbas011687.workers.dev/info?username=" + encodeURIComponent(username);
-  
-  // 1) Wrapped Proxy API to bypass missing CORS headers
+  // 1) New GreatOnlineTools API via POST (Very reliable for DPs)
   try {
-    const response = await fetch("https://api.allorigins.win/get?url=" + encodeURIComponent(targetUrl));
+    const response = await fetchLike("https://greatonlinetools.com/endpoints-tools/endpoint.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: username })
+    });
+    const data = await response.json();
+    if (data && data.status) {
+      // Use downloadUrl first if it exists (usually higher quality), otherwise profilePictureUrl
+      const picUrl = data.downloadUrl || data.profilePictureUrl;
+      if (picUrl) {
+        return { url: cleanUrl(picUrl), src: "greatonlinetools" };
+      }
+    }
+  } catch (e) {
+    console.warn("greatonlinetools DP lookup failed:", e);
+  }
+
+  // 2) Original Worker via AllOrigins wrapper (Fallback)
+  try {
+    const targetUrl = "https://bj-insta-profile-info.mmabbas011687.workers.dev/info?username=" + encodeURIComponent(username);
+    const response = await fetchLike("https://api.allorigins.win/get?url=" + encodeURIComponent(targetUrl));
     const wrappedData = await response.json();
     
     if (wrappedData && wrappedData.contents) {
@@ -724,7 +752,7 @@ async function resolveAvatar(username) {
     console.warn("DP proxy lookup failed:", e);
   }
 
-  // 2) Optional Cloudflare Worker Proxy Fallback
+  // 3) Optional Cloudflare Worker Proxy Fallback (Final Fallback)
   if (PROXY || (window.root && window.root.superFetch)) {
     try {
       const data = await withTimeout(proxyResolve("/profile", { username }), 30000, "Profile lookup timed out.");
@@ -732,7 +760,7 @@ async function resolveAvatar(username) {
     } catch (e) {}
   }
 
-  throw new Error("Couldn't find a profile picture for @" + username + " (the API may be blocked or the profile is private).");
+  throw new Error("Couldn't find a profile picture for @" + username + " (the APIs may be blocked or the profile is private).");
 }
 
 /* ---------------- UI renderers ---------------- */
