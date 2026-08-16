@@ -935,7 +935,7 @@ async function renderDp(username, input) {
   const box = document.createElement("div");
   box.className = "item";
   const frame = document.createElement("div");
-  frame.className = "media-frame avatar";
+  frame.className = "media-frame dp-avatar";
   const hint = document.createElement("div");
   hint.className = "frame-hint";
   hint.innerHTML = '<div class="spinner"></div><span>Fetching profile…</span>';
