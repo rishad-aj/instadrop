@@ -1528,26 +1528,7 @@ details.accordion.faq-item {
 .faq-item[open] .faq-chevron { transform: rotate(180deg); }
 .faq-item .accordion-content p { margin: 0; padding: 16px 20px 18px; color: rgb(var(--content2)); font-size: 14px; line-height: 1.65; }
 
-/* results */
-.results { display: flex; flex-direction: column; gap: 18px; scroll-margin-top: 92px; margin-top: 40px; }
-.result-card { background-color: rgb(var(--gray-3)); border: 1px solid rgb(var(--gray-6)); border-radius: .9rem; padding: 20px; box-shadow: 0 4px 18px rgba(0,0,0,.05); }
-.meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.meta .who { font-size: 13px; font-weight: 600; color: rgb(var(--content1)); }
-.meta .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.meta .open {
-  color: rgb(var(--primary)); font-size: 12.5px; font-weight: 600;
-  border: 1px solid rgb(var(--gray-6)); padding: 5px 11px; border-radius: .5rem; cursor: pointer; background: transparent;
-}
-.meta .open:hover { border-color: rgb(var(--primary)); }
-.item { margin-top: 14px; }
-.item .media-frame {
-  width: 100%; min-height: 280px;
-  background: #111; border: 1px solid rgb(var(--gray-6)); border-radius: .75rem;
-  display: grid; place-items: center; overflow: hidden; position: relative;
-}
-.item video, .item img { width: 100%; display: block; max-height: 640px; object-fit: contain; }
-.item .media-frame.avatar { background: rgb(var(--gray-1)); min-height: 0; padding: 26px; }
-.item .media-frame.avatar img { width: 200px; height: 200px; border-radius: 50%; object-fit: cover; max-height: none; }
+
 .media-badge {
   position: absolute; bottom: 8px; right: 8px;
   background: rgba(0,0,0,.65); color: #fff; font-size: 11.5px; font-weight: 600;
