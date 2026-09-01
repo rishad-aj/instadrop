@@ -393,6 +393,36 @@ if (pasteBtn) {
   });
 }
 
+/* ---------------- prefill via ?url= (Apple Shortcuts / share sheet) ---------------- */
+
+function prefillFromQuery() {
+  const params = new URLSearchParams(location.search);
+  const raw = params.get("url") || params.get("u");
+  if (!raw) return;
+  const val = String(raw).trim();
+  if (!/^https?:\/\//i.test(val) || /shortcut[- ]?input/i.test(val)) return;
+  urlInput.value = val;
+  if (inputWrap) inputWrap.classList.add("has-val");
+  errorEl.classList.add("hidden");
+  history.replaceState(null, "", location.pathname + location.hash);
+  setTimeout(() => downloadBtn.click(), 350);
+}
+prefillFromQuery();
+
+const copyShortcutUrlBtn = document.getElementById("copyShortcutUrlBtn");
+if (copyShortcutUrlBtn) {
+  copyShortcutUrlBtn.addEventListener("click", async () => {
+    const codeEl = document.getElementById("shortcutUrlCode");
+    try {
+      await navigator.clipboard.writeText(codeEl ? codeEl.textContent : "https://instadrop.web.app/?url=");
+      copyShortcutUrlBtn.textContent = "Copied ✓";
+      setTimeout(() => { copyShortcutUrlBtn.textContent = "Copy URL template"; }, 2500);
+    } catch (e) {
+      showError("Couldn't copy — long-press the URL above instead.");
+    }
+  });
+}
+
 for (const faq of document.querySelectorAll("details.accordion")) {
   faq.addEventListener("toggle", () => faq.classList.toggle("accordion-open", faq.open));
 }
