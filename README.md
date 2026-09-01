@@ -18,6 +18,7 @@ Instadrop is a privacy-friendly, browser-based Instagram downloader. Paste a lin
 - 🚫 **No ads, no trackers, no popups, no redirects** — just a download button
 - 🔒 **Private by design** — your links and files never leave your device
 - 📱 **Installable PWA** — "Add to Home Screen" on Android & iOS, works offline
+- 🔗 **App shortcuts** — long-press the app icon for quick tasks: Download a reel, profile pic, or MP3
 - 🌓 **Light / Dark / System** themes
 
 ## 🚀 How to use
