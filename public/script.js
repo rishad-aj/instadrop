@@ -351,6 +351,14 @@ if (scrollToCardBtn) {
   });
 }
 
+const focusDownloader = () => {
+  urlInput.scrollIntoView({ behavior: "smooth", block: "center" });
+  setTimeout(() => urlInput.focus(), 500);
+};
+if (["reel", "profile", "audio"].includes((location.hash || "").replace(/^#/, ""))) {
+  setTimeout(focusDownloader, 100);
+}
+
 const inputWrap = document.querySelector(".input-wrap");
 const phScroll = document.querySelector(".ph-scroll");
 const phMarquee = document.querySelector(".ph-marquee");
@@ -375,6 +383,7 @@ if (pasteBtn) {
         return;
       }
       urlInput.value = text.trim();
+      if (inputWrap) inputWrap.classList.add("has-val");
       errorEl.classList.add("hidden");
       if (parseInput(urlInput.value).kind !== "unknown") downloadBtn.click();
     } catch (e) {
@@ -639,7 +648,11 @@ function renderHistory() {
     const c = document.createElement("button");
     c.className = "chip";
     c.textContent = entry.label;
-    c.addEventListener("click", () => { urlInput.value = entry.input; downloadBtn.click(); });
+    c.addEventListener("click", () => {
+      urlInput.value = entry.input;
+      if (inputWrap) inputWrap.classList.add("has-val");
+      downloadBtn.click();
+    });
     histRow.appendChild(c);
   }
   const cl = document.createElement("button");
@@ -802,7 +815,6 @@ async function renderItems(data, opts, input) {
     box.className = "item";
     const ext = item.kind === "video" ? "mp4" : "jpg";
     const filename = opts.filePrefix + (data.items.length > 1 ? "_" + (i + 1) : "") + "." + ext;
-    const label = item.kind === "video" ? "MP4" : "image";
 
     const frame = document.createElement("div");
     frame.className = "media-frame";
@@ -815,20 +827,11 @@ async function renderItems(data, opts, input) {
     const row = document.createElement("div");
     row.className = "dl-row";
 
-    const dlLink = document.createElement("a");
-    dlLink.className = "dl-btn";
-    dlLink.href = item.url;
-    dlLink.target = "_blank";
-    dlLink.rel = "noopener noreferrer";
-    dlLink.textContent = "Download " + label;
-    dlLink.title = "Downloads straight to your device.";
-    row.appendChild(dlLink);
-
     const saveBtn = document.createElement("button");
-    saveBtn.className = "dl-btn alt";
+    saveBtn.className = "dl-btn";
     saveBtn.disabled = true;
-    saveBtn.textContent = "Save copy…";
-    saveBtn.title = "Saves with a clean filename.";
+    saveBtn.textContent = "Download";
+    saveBtn.title = "Downloads straight to your device.";
     row.appendChild(saveBtn);
 
     const audioBtn = item.kind === "video" ? document.createElement("button") : null;
@@ -868,7 +871,7 @@ async function renderItems(data, opts, input) {
       const mb = (blob.size / 1048576).toFixed(1);
       const bytes = item.kind === "video" ? new Uint8Array(await blob.arrayBuffer()) : null;
       saveBtn.disabled = false;
-      saveBtn.textContent = "Save copy (" + mb + " MB)";
+      saveBtn.textContent = "Download (" + mb + " MB)";
       saveBtn.onclick = () => triggerSave(blob, filename);
       if (audioBtn) {
         audioBtn.disabled = false;
@@ -898,7 +901,7 @@ async function renderItems(data, opts, input) {
       note.className = "frame-hint";
       note.textContent = "Preview shown above. Media host is busy — use the Download button.";
       frame.appendChild(note);
-      saveBtn.textContent = "Save copy (busy)";
+      saveBtn.textContent = "Download (busy)";
       if (audioBtn) {
         audioBtn.textContent = "Audio (needs preview)";
       }
