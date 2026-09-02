@@ -71,6 +71,15 @@ firebase use --add   # pick the instadrop project
 firebase deploy
 ```
 
+## 🤖 Telegram Bot
+
+Instadrop also ships a Telegram bot that sends reels/posts straight into a chat as video files. It reuses the **same** media-download endpoints the website uses — no second downloader — and lives in its own `functions/` folder so the website is untouched.
+
+- Full setup: see **[BOT_SETUP.md](BOT_SETUP.md)**
+- Bot backend: `functions/` (Firebase Cloud Functions, zero deps beyond the Firebase SDK)
+- Secrets: `TELEGRAM_BOT_TOKEN` + `WEBHOOK_SECRET` via `firebase functions:secrets:set` (never committed)
+- Webhook: `node scripts/setup-webhook.js`
+
 ## ⚠️ Notes
 
 - **Downloading content:** only download media you have the right to — your own posts, or content the owner has explicitly shared for downloading. Respect creators' rights and Instagram's terms of service.
