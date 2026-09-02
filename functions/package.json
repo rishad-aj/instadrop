@@ -1,0 +1,19 @@
+{
+  "name": "instadrop-telegram-bot",
+  "version": "1.0.0",
+  "description": "Telegram bot backend for Instadrop (Firebase Cloud Functions). Zero runtime deps beyond firebase-functions.",
+  "private": true,
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "dependencies": {
+    "firebase-functions": "^6.3.2"
+  }
+}
