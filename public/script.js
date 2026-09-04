@@ -1,3626 +1,2544 @@
-/* ============================================================
-   Instadrop - script.js
-   Standalone application logic.
-   ============================================================ */
+/* =========================================================
+   INSTADROP - CLEAN SCRIPT
+   Only Instagram API:
+   https://instadrop.rishu-rishad2019.workers.dev/?url=
 
-/* Network helper: uses Perchance's superFetch proxy when available,
-   otherwise falls back to the browser's native fetch. */
-const fetchLike = (typeof window.root !== 'undefined' && window.root && window.root.superFetch)
-  ? window.root.superFetch.bind(window.root)
-  : window.fetch.bind(window);
+   No:
+   - DownloadGram API
+   - Thakur API
+   - MN Bots API
+   - Anon Social API
+   - DD Video API
+   - SnapInsta API
+   - InDown API
+   - CORS proxies
+   - Instagram HTML scraping
+   - External profile APIs
+   - External FFmpeg CDN
+   ========================================================= */
 
-/* ============================================================
-   API CONFIGURATION
-   ============================================================ */
+(() => {
+  "use strict";
 
-/*
- * Your own Instagram API.
- *
- * Usage:
- * https://instadrop.rishu-rishad2019.workers.dev/?url=INSTAGRAM_URL
- *
- * This is now the PRIMARY resolver for:
- * - Posts
- * - Reels
- * - Carousel posts
- * - Stories
- * - Highlights
- *
- * Profile pictures continue to use the dedicated DP resolver below.
- */
-const INSTADROP_API = "https://instadrop.rishu-rishad2019.workers.dev/?url=";
+  /* =========================================================
+     CONFIG
+     ========================================================= */
 
-/* Optional Cloudflare Worker proxy configuration */
-const PROXY = "";
+  const INSTADROP_API =
+    "https://instadrop.rishu-rishad2019.workers.dev/?url=";
 
-/* FFmpeg */
-const FFMPEG_CORE =
-  "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js";
+  const HISTORY_KEY = "instadrop_history";
+  const THEME_KEY = "instadrop_theme";
+  const MAX_HISTORY = 8;
 
-const FFMPEG_WASM =
-  "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm";
+  /* =========================================================
+     HELPERS
+     ========================================================= */
 
-/* ============================================================
-   OPTIONAL CLOUDflare PROXY
-   ============================================================ */
+  const $ = (selector, root = document) =>
+    root.querySelector(selector);
 
-function proxyResolve(path, body) {
-  if (PROXY) {
-    return fetch(PROXY + path, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          let msg = "Proxy error (HTTP " + res.status + ").";
-          try {
-            const j = await res.json();
-            if (j.error) msg = j.error;
-          } catch (e) {}
-          throw new Error(msg);
-        }
-        return res.json();
-      })
-      .catch((err) => {
-        if (
-          typeof window !== "undefined" &&
-          window.root &&
-          window.root.superFetch
-        ) {
-          return resolveLocally(path, body);
-        }
-        throw err;
-      });
-  }
+  const $$ = (selector, root = document) =>
+    Array.from(root.querySelectorAll(selector));
 
-  if (
-    typeof window !== "undefined" &&
-    window.root &&
-    window.root.superFetch
-  ) {
-    return resolveLocally(path, body);
-  }
+  const sleep = (ms) =>
+    new Promise(resolve => setTimeout(resolve, ms));
 
-  return null;
-}
-
-function proxyFileUrl(url) {
-  return PROXY
-    ? PROXY + "/file?url=" + encodeURIComponent(url)
-    : url;
-}
-
-/* ============================================================
-   LOCAL RESOLUTION
-   ============================================================ */
-
-function deepFindKey(o, key) {
-  if (!o || typeof o !== "object") return null;
-
-  if (key in o) return o[key];
-
-  for (const v of Object.values(o)) {
-    const r = deepFindKey(v, key);
-    if (r !== null && r !== undefined) return r;
-  }
-
-  return null;
-}
-
-function jsonScriptBlocks(html) {
-  return (
-    html.match(
-      /<script type="application\/json"[^>]*>([\s\S]*?)<\/script>/g
-    ) || []
-  ).map((raw) => {
-    const m = raw.match(
-      /^<script type="application\/json"[^>]*>([\s\S]*?)<\/script>$/
-    );
-    return m ? m[1] : "";
-  });
-}
-
-function largestCandidate(list) {
-  return list
-    ? list.reduce((a, b) =>
-        a.height * a.width >= b.height * b.width ? a : b
-      )
-    : null;
-}
-
-function normalizeItems(it) {
-  const out = [];
-
-  if (!it || typeof it !== "object") return out;
-
-  const img = it.image_versions2
-    ? largestCandidate(it.image_versions2.candidates)
-    : null;
-
-  const thumb = img
-    ? img.url
-    : it.display_url || it.thumbnail || it.thumb || null;
-
-  const vid = it.video_versions
-    ? largestCandidate(it.video_versions)
-    : null;
-
-  const videoUrl = vid
-    ? vid.url
-    : it.video_url || it.video || null;
-
-  if (videoUrl) {
-    out.push({
-      kind: "video",
-      thumb,
-      url: cleanUrl(videoUrl),
-    });
-  } else if (thumb) {
-    out.push({
-      kind: "image",
-      thumb: cleanUrl(thumb),
-      url: cleanUrl(thumb),
-    });
-  }
-
-  if (Array.isArray(it.carousel_media)) {
-    for (const c of it.carousel_media) {
-      out.push(...normalizeItems(c));
+  /*
+   * Uses your API only.
+   *
+   * If Perchance provides superFetch, it can still be used
+   * as the browser's fetch implementation. It does NOT add
+   * another Instagram API.
+   */
+  async function fetchLike(url, options = {}) {
+    if (
+      window.root &&
+      typeof window.root.superFetch === "function"
+    ) {
+      try {
+        return await window.root.superFetch(url, options);
+      } catch (_) {
+        // Fall back to normal browser fetch.
+      }
     }
+
+    return fetch(url, options);
   }
 
-  if (Array.isArray(it.carousel_items)) {
-    for (const c of it.carousel_items) {
-      out.push(...normalizeItems(c));
+  function safeJsonParse(value) {
+    if (typeof value !== "string") {
+      return value;
     }
-  }
-
-  return out;
-}
-
-function itemsFromConnection(conn) {
-  const items = [];
-
-  for (const e of conn.edges || []) {
-    for (const it of (e.node && e.node.items) || []) {
-      items.push(...normalizeItems(it));
-    }
-  }
-
-  return items;
-}
-
-function resolvePageFromHtml(html, keys) {
-  for (const b of jsonScriptBlocks(html)) {
-    let j;
 
     try {
-      j = JSON.parse(b);
-    } catch (e) {
-      continue;
+      return JSON.parse(value);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function absoluteUrl(url) {
+    if (!url || typeof url !== "string") {
+      return null;
+    }
+
+    let value = url.trim();
+
+    if (!value) {
+      return null;
+    }
+
+    value = value
+      .replace(/\\u0026/g, "&")
+      .replace(/\\u003D/g, "=")
+      .replace(/\\\//g, "/")
+      .replace(/&amp;/g, "&")
+      .replace(/&quot;/g, '"');
+
+    if (
+      value.startsWith("http://") ||
+      value.startsWith("https://") ||
+      value.startsWith("//")
+    ) {
+      if (value.startsWith("//")) {
+        return "https:" + value;
+      }
+
+      return value;
+    }
+
+    return null;
+  }
+
+  function isMediaUrl(url) {
+    if (!url || typeof url !== "string") {
+      return false;
+    }
+
+    const value = url.toLowerCase();
+
+    return (
+      value.startsWith("http://") ||
+      value.startsWith("https://")
+    );
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  /* =========================================================
+     INPUT / INSTAGRAM URL
+     ========================================================= */
+
+  function normalizeInstagramUrl(value) {
+    if (!value) {
+      return "";
+    }
+
+    let url = String(value).trim();
+
+    if (!url) {
+      return "";
+    }
+
+    /*
+     * Bare username is handled as a profile URL.
+     */
+    if (
+      !url.startsWith("http://") &&
+      !url.startsWith("https://")
+    ) {
+      if (
+        !url.includes("/") &&
+        !url.includes(" ") &&
+        !url.includes("?")
+      ) {
+        return `https://www.instagram.com/${encodeURIComponent(url)}/`;
+      }
+    }
+
+    /*
+     * Convert http Instagram URLs to https.
+     */
+    if (url.startsWith("http://instagram.com")) {
+      url = "https://" + url.slice("http://".length);
+    }
+
+    if (url.startsWith("http://www.instagram.com")) {
+      url = "https://" + url.slice("http://".length);
+    }
+
+    return url;
+  }
+
+  function isInstagramUrl(url) {
+    try {
+      const parsed = new URL(url);
+
+      return (
+        parsed.hostname === "instagram.com" ||
+        parsed.hostname === "www.instagram.com" ||
+        parsed.hostname.endsWith(".instagram.com")
+      );
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function extractShortcode(url) {
+    if (!url) {
+      return null;
+    }
+
+    try {
+      const parsed = new URL(url);
+
+      const parts = parsed.pathname
+        .split("/")
+        .filter(Boolean);
+
+      const supported = [
+        "reel",
+        "reels",
+        "p",
+        "tv"
+      ];
+
+      for (let i = 0; i < parts.length - 1; i++) {
+        if (supported.includes(parts[i].toLowerCase())) {
+          return parts[i + 1];
+        }
+      }
+
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function parseInput(value) {
+    const original = String(value || "").trim();
+
+    if (!original) {
+      return {
+        type: "invalid",
+        url: ""
+      };
+    }
+
+    const normalized = normalizeInstagramUrl(original);
+
+    if (!normalized) {
+      return {
+        type: "invalid",
+        url: ""
+      };
+    }
+
+    /*
+     * Bare username
+     */
+    if (
+      !original.includes("://") &&
+      !original.includes("/") &&
+      !original.includes(" ")
+    ) {
+      return {
+        type: "profile",
+        url: normalized,
+        username: original.replace(/^@/, "")
+      };
+    }
+
+    if (!isInstagramUrl(normalized)) {
+      return {
+        type: "invalid",
+        url: normalized
+      };
+    }
+
+    let pathname = "";
+
+    try {
+      pathname = new URL(normalized).pathname.toLowerCase();
+    } catch (_) {
+      pathname = "";
+    }
+
+    /*
+     * Instagram stories
+     */
+    if (pathname.includes("/stories/highlights/")) {
+      return {
+        type: "highlight",
+        url: normalized
+      };
+    }
+
+    if (pathname.includes("/stories/")) {
+      return {
+        type: "story",
+        url: normalized
+      };
+    }
+
+    /*
+     * Profile
+     */
+    const shortcode = extractShortcode(normalized);
+
+    if (shortcode) {
+      return {
+        type: "media",
+        url: normalized,
+        shortcode
+      };
+    }
+
+    /*
+     * Anything else on Instagram is sent directly
+     * to your API. This allows your Worker to decide
+     * how to handle the URL.
+     */
+    return {
+      type: "profile",
+      url: normalized
+    };
+  }
+
+  /* =========================================================
+     YOUR API
+     ========================================================= */
+
+  async function callInstagramApi(instagramUrl) {
+    if (!instagramUrl) {
+      throw new Error("Instagram URL is required.");
+    }
+
+    const endpoint =
+      INSTADROP_API + encodeURIComponent(instagramUrl);
+
+    let response;
+
+    try {
+      response = await fetchLike(endpoint, {
+        method: "GET",
+        headers: {
+          "Accept": "application/json, text/plain, */*"
+        }
+      });
+    } catch (error) {
+      throw new Error(
+        "Could not connect to the Instadrop API."
+      );
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        `API request failed (${response.status}).`
+      );
+    }
+
+    const text = await response.text();
+
+    if (!text || !text.trim()) {
+      throw new Error(
+        "Your API returned an empty response."
+      );
+    }
+
+    /*
+     * Most APIs return JSON.
+     */
+    const json = safeJsonParse(text);
+
+    if (json !== null) {
+      return json;
+    }
+
+    /*
+     * Also support an API that returns a direct URL
+     * as plain text.
+     */
+    const directUrl = absoluteUrl(text.trim());
+
+    if (directUrl) {
+      return {
+        url: directUrl
+      };
+    }
+
+    /*
+     * Some APIs return JSON embedded in text.
+     */
+    const firstBrace = text.indexOf("{");
+    const lastBrace = text.lastIndexOf("}");
+
+    if (
+      firstBrace !== -1 &&
+      lastBrace !== -1 &&
+      lastBrace > firstBrace
+    ) {
+      const possibleJson = text.slice(
+        firstBrace,
+        lastBrace + 1
+      );
+
+      const parsed = safeJsonParse(possibleJson);
+
+      if (parsed !== null) {
+        return parsed;
+      }
+    }
+
+    throw new Error(
+      "Your API returned an unsupported response."
+    );
+  }
+
+  /* =========================================================
+     GENERIC API RESPONSE PARSER
+     ========================================================= */
+
+  const URL_KEYS = [
+    "url",
+    "download",
+    "download_url",
+    "downloadUrl",
+    "media_url",
+    "mediaUrl",
+    "video_url",
+    "videoUrl",
+    "image_url",
+    "imageUrl",
+    "thumbnail",
+    "thumbnail_url",
+    "thumbnailUrl",
+    "src",
+    "source",
+    "display_url",
+    "displayUrl",
+    "play_url",
+    "playUrl",
+    "content_url",
+    "contentUrl"
+  ];
+
+  const VIDEO_KEYS = [
+    "video",
+    "video_url",
+    "videoUrl",
+    "video_url_hd",
+    "videoUrlHd",
+    "play_url",
+    "playUrl"
+  ];
+
+  const IMAGE_KEYS = [
+    "image",
+    "image_url",
+    "imageUrl",
+    "display_url",
+    "displayUrl",
+    "photo",
+    "photo_url",
+    "photoUrl"
+  ];
+
+  const THUMB_KEYS = [
+    "thumbnail",
+    "thumbnail_url",
+    "thumbnailUrl",
+    "cover",
+    "cover_url",
+    "coverUrl",
+    "poster",
+    "poster_url",
+    "posterUrl"
+  ];
+
+  const TITLE_KEYS = [
+    "title",
+    "caption",
+    "text",
+    "description",
+    "name"
+  ];
+
+  function getFirstUrl(object, keys) {
+    if (!object || typeof object !== "object") {
+      return null;
     }
 
     for (const key of keys) {
-      const found = deepFindKey(j, key);
+      const value = object[key];
 
-      if (!found) continue;
+      if (typeof value === "string") {
+        const url = absoluteUrl(value);
 
+        if (url) {
+          return url;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  function getFirstString(object, keys) {
+    if (!object || typeof object !== "object") {
+      return "";
+    }
+
+    for (const key of keys) {
       if (
-        key ===
-        "xdt_api__v1__feed__reels_media__connection"
+        typeof object[key] === "string" &&
+        object[key].trim()
       ) {
-        return itemsFromConnection(found);
-      }
-
-      if (
-        key ===
-        "xdt_api__v1__media__shortcode__web_info"
-      ) {
-        const items = [];
-
-        for (const it of found.items || []) {
-          items.push(...normalizeItems(it));
-        }
-
-        return items;
-      }
-
-      if (key === "xdt_shortcode_media") {
-        return normalizeItems(found);
-      }
-    }
-  }
-
-  return [];
-}
-
-async function resolveLocally(path, body) {
-  if (path === "/profile") {
-    const html = await fetchLike(
-      "https://www.instagram.com/" +
-        encodeURIComponent(body.username) +
-        "/"
-    ).then((r) => r.text());
-
-    let user = null;
-
-    for (const b of jsonScriptBlocks(html)) {
-      let j;
-
-      try {
-        j = JSON.parse(b);
-      } catch (e) {
-        continue;
-      }
-
-      user = deepFindKey(j, "xig_user_by_username");
-
-      if (user) break;
-    }
-
-    if (!user || !user.profile_pic_url) {
-      throw new Error("Couldn't find that profile.");
-    }
-
-    return {
-      username: user.username,
-      fullName: user.full_name,
-      profilePicUrl: user.profile_pic_url,
-    };
-  }
-
-  const keys =
-    path === "/story"
-      ? ["xdt_api__v1__feed__reels_media__connection"]
-      : [
-          "xdt_api__v1__media__shortcode__web_info",
-          "xdt_shortcode_media",
-          "xdt_api__v1__feed__reels_media__connection",
-        ];
-
-  const html = await fetchLike(body.url).then((r) => r.text());
-
-  const items = resolvePageFromHtml(html, keys);
-
-  if (!items.length) {
-    throw new Error(
-      "No downloadable media was returned — the post/highlight may be private or deleted."
-    );
-  }
-
-  return { items };
-}
-
-/* ============================================================
-   FREE FALLBACK SERVICES
-   ============================================================ */
-
-const CORS_PROXIES = [
-  (u) =>
-    "https://corsproxy.io/?url=" +
-    encodeURIComponent(u),
-
-  (u) =>
-    "https://api.allorigins.win/raw?url=" +
-    encodeURIComponent(u),
-
-  (u) =>
-    "https://api.codetabs.com/v1/proxy?quest=" +
-    encodeURIComponent(u),
-];
-
-const HAS_SUPERFETCH =
-  typeof window !== "undefined" &&
-  !!window.root &&
-  !!window.root.superFetch;
-
-async function serverFetch(url, opts) {
-  try {
-    return await fetchLike(url, opts);
-  } catch (e) {
-    if (HAS_SUPERFETCH) throw e;
-  }
-
-  let lastErr = "Network error";
-
-  for (const build of CORS_PROXIES) {
-    try {
-      const res = await withTimeout(
-        fetchLike(build(url)),
-        8000,
-        "proxy timed out"
-      );
-
-      if (res && res.ok) return res;
-
-      lastErr = "HTTP " + (res && res.status);
-    } catch (e) {
-      lastErr = String(
-        (e && e.message) || e
-      );
-    }
-  }
-
-  throw new Error(lastErr);
-}
-
-async function getText(url) {
-  const res = await serverFetch(url);
-  return await res.text();
-}
-
-async function postText(url, body) {
-  const res = await withTimeout(
-    fetchLike(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    }),
-    25000,
-    "service timed out"
-  );
-
-  if (!res || !res.ok) {
-    throw new Error(
-      "HTTP " + (res && res.status || "error")
-    );
-  }
-
-  return await res.text();
-}
-
-/* ============================================================
-   HELPERS
-   ============================================================ */
-
-function cleanUrl(u) {
-  return String(u || "")
-    .replace(/\\\//g, "/")
-    .replace(/&amp;/g, "&");
-}
-
-/* ============================================================
-   GENERIC JSON MEDIA PARSER
-   ============================================================ */
-
-function jsonToItems(text) {
-  let j;
-
-  try {
-    j = JSON.parse(text);
-  } catch (e) {
-    return [];
-  }
-
-  const items = [];
-  const seen = new Set();
-
-  const push = (raw, thumb, kind) => {
-    const u = cleanUrl(raw);
-
-    if (!/^https?:\/\//.test(u)) return;
-
-    if (seen.has(u)) return;
-
-    seen.add(u);
-
-    items.push({
-      kind:
-        kind ||
-        (/\.mp4(\?|&|$)/i.test(u)
-          ? "video"
-          : "image"),
-
-      thumb: thumb
-        ? cleanUrl(thumb)
-        : null,
-
-      url: u,
-    });
-  };
-
-  const scan = (o) => {
-    if (!o || typeof o !== "object") return;
-
-    if (
-      typeof o.url === "string" &&
-      /^https?:\/\//.test(o.url)
-    ) {
-      push(
-        o.url,
-        o.thumb ||
-          o.thumbnail ||
-          o.img ||
-          o.image ||
-          o.display_url
-      );
-    }
-
-    if (
-      typeof o.video === "string" &&
-      /^https?:\/\//.test(o.video)
-    ) {
-      push(
-        o.video,
-        o.thumbnail ||
-          o.thumb ||
-          o.display_url,
-        "video"
-      );
-    }
-
-    if (
-      typeof o.video_url === "string" &&
-      /^https?:\/\//.test(o.video_url)
-    ) {
-      push(
-        o.video_url,
-        o.thumbnail ||
-          o.thumb ||
-          o.display_url,
-        "video"
-      );
-    }
-
-    if (
-      typeof o.image_url === "string" &&
-      /^https?:\/\//.test(o.image_url)
-    ) {
-      push(
-        o.image_url,
-        o.image_url,
-        "image"
-      );
-    }
-
-    if (
-      typeof o.display_url === "string" &&
-      /^https?:\/\//.test(o.display_url)
-    ) {
-      push(
-        o.display_url,
-        o.display_url,
-        "image"
-      );
-    }
-
-    if (
-      typeof o.link === "string" &&
-      /^https?:\/\//.test(o.link)
-    ) {
-      push(
-        o.link,
-        o.thumbnail || o.thumb
-      );
-    }
-
-    if (
-      typeof o.thumbnail === "string" &&
-      /^https?:\/\//.test(o.thumbnail)
-    ) {
-      /*
-       * Do not automatically treat thumbnails as separate
-       * downloadable media if the object already contains
-       * another media URL.
-       */
-      if (
-        !o.url &&
-        !o.video &&
-        !o.video_url &&
-        !o.image_url &&
-        !o.display_url
-      ) {
-        push(
-          o.thumbnail,
-          o.thumbnail,
-          "image"
-        );
+        return object[key].trim();
       }
     }
 
-    if (
-      o.image_versions2 &&
-      Array.isArray(
-        o.image_versions2.candidates
-      )
-    ) {
-      const c =
-        o.image_versions2.candidates
-          .slice()
-          .sort(
-            (a, b) =>
-              b.width * b.height -
-              a.width * a.height
-          )[0];
-
-      if (c) {
-        push(
-          c.url,
-          c.url,
-          "image"
-        );
-      }
-    }
-
-    if (Array.isArray(o.video_versions)) {
-      const v =
-        o.video_versions
-          .slice()
-          .sort(
-            (a, b) =>
-              b.width * b.height -
-              a.width * a.height
-          )[0];
-
-      if (v) {
-        push(
-          v.url,
-          v.url,
-          "video"
-        );
-      }
-    }
-
-    const arrays = [
-      "media",
-      "stories",
-      "items",
-      "medias",
-      "data",
-      "result",
-      "results",
-      "carousel",
-      "carousel_media",
-      "carousel_items",
-    ];
-
-    for (const key of arrays) {
-      if (Array.isArray(o[key])) {
-        for (const m of o[key]) {
-          scan(m);
-        }
-      }
-    }
-
-    for (const v of Object.values(o)) {
-      if (
-        v &&
-        typeof v === "object" &&
-        !Array.isArray(v)
-      ) {
-        scan(v);
-      }
-    }
-  };
-
-  scan(j);
-
-  return items;
-}
-
-/* ============================================================
-   YOUR API RESPONSE PARSER
-   ============================================================ */
-
-/*
- * Your Worker is the PRIMARY API.
- *
- * We first attempt to parse it as JSON.
- * If the response is JSON in almost any common structure,
- * jsonToItems() will recursively locate the media URLs.
- *
- * If your Worker returns a direct media URL as plain text,
- * that is also supported.
- */
-
-function parseInstadropApiResponse(text) {
-  const trimmed = String(text || "").trim();
-
-  if (!trimmed) return [];
-
-  /* First: normal JSON response */
-  const jsonItems = jsonToItems(trimmed);
-
-  if (jsonItems.length) {
-    return jsonItems;
-  }
-
-  /* Second: direct JSON string */
-  try {
-    const j = JSON.parse(trimmed);
-
-    if (typeof j === "string") {
-      const u = cleanUrl(j);
-
-      if (/^https?:\/\//.test(u)) {
-        return [
-          {
-            kind: /\.mp4(\?|&|$)/i.test(u)
-              ? "video"
-              : "image",
-            thumb: null,
-            url: u,
-          },
-        ];
-      }
-    }
-  } catch (e) {}
-
-  /* Third: direct URL response */
-  const direct = cleanUrl(trimmed);
-
-  if (/^https?:\/\/.+/i.test(direct)) {
-    return [
-      {
-        kind: /\.mp4(\?|&|$)/i.test(direct)
-          ? "video"
-          : "image",
-        thumb: null,
-        url: direct,
-      },
-    ];
-  }
-
-  return [];
-}
-
-/* ============================================================
-   TRY FALLBACK APIs
-   ============================================================ */
-
-async function firstWorking(candidates) {
-  for (const c of candidates) {
-    try {
-      const t = await withTimeout(
-        c.fetch(),
-        25000,
-        c.name + " timed out"
-      );
-
-      const items = c.parse(t);
-
-      if (items && items.length) {
-        return items;
-      }
-    } catch (e) {
-      console.warn(
-        c.name + " failed:",
-        e
-      );
-    }
-  }
-
-  return [];
-}
-
-/* ============================================================
-   DOM ELEMENTS
-   ============================================================ */
-
-const urlInput =
-  document.getElementById("urlInput");
-
-const downloadBtn =
-  document.getElementById("downloadBtn");
-
-const spinnerCtn =
-  document.getElementById("spinnerCtn");
-
-const spinnerText =
-  document.getElementById("spinnerText");
-
-const errorEl =
-  document.getElementById("errorEl");
-
-const resultCtn =
-  document.getElementById("result");
-
-const histRow =
-  document.getElementById("histRow");
-
-const sleep = (ms) =>
-  new Promise((r) => setTimeout(r, ms));
-
-function withTimeout(
-  promise,
-  ms,
-  msg
-) {
-  let timer;
-
-  return Promise.race([
-    promise,
-
-    new Promise((_, rej) => {
-      timer = setTimeout(
-        () =>
-          rej(
-            new Error(
-              msg ||
-                "Request timed out."
-            )
-          ),
-        ms
-      );
-    }),
-  ]).finally(() =>
-    clearTimeout(timer)
-  );
-}
-
-/* ============================================================
-   THEMES
-   ============================================================ */
-
-function applyTheme(dark) {
-  document.documentElement.dataset.theme =
-    dark ? "dark" : "light";
-}
-
-function currentThemeChoice() {
-  let cur = null;
-
-  try {
-    cur = localStorage.getItem(
-      "instadrop_theme"
-    );
-  } catch (e) {}
-
-  return [
-    "light",
-    "dark",
-    "system",
-  ].includes(cur)
-    ? cur
-    : "light";
-}
-
-function systemPrefersDark() {
-  return !!(
-    window.matchMedia &&
-    window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches
-  );
-}
-
-function applyChoice(choice) {
-  if (choice === "system") {
-    applyTheme(
-      systemPrefersDark()
-    );
-  } else {
-    applyTheme(
-      choice === "dark"
-    );
-  }
-}
-
-function initThemes() {
-  applyChoice(
-    currentThemeChoice()
-  );
-
-  const items =
-    document.querySelectorAll(
-      ".theme-dd .dd-item, .side-theme-item"
-    );
-
-  const syncActive = () => {
-    const c =
-      currentThemeChoice();
-
-    for (const it of items) {
-      it.classList.toggle(
-        "dd-active",
-        it.dataset.themeChoice === c
-      );
-    }
-  };
-
-  for (const it of items) {
-    it.addEventListener(
-      "click",
-      () => {
-        const c =
-          it.dataset.themeChoice;
-
-        try {
-          localStorage.setItem(
-            "instadrop_theme",
-            c
-          );
-        } catch (e) {}
-
-        applyChoice(c);
-        syncActive();
-
-        const btn =
-          document.querySelector(
-            ".theme-dd .dd-btn"
-          );
-
-        if (btn) btn.blur();
-      }
-    );
-  }
-
-  syncActive();
-
-  const mq =
-    window.matchMedia &&
-    window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    );
-
-  if (
-    mq &&
-    mq.addEventListener
-  ) {
-    mq.addEventListener(
-      "change",
-      (e) => {
-        if (
-          currentThemeChoice() ===
-          "system"
-        ) {
-          applyTheme(
-            e.matches
-          );
-        }
-      }
-    );
-  }
-}
-
-initThemes();
-
-/* ============================================================
-   NAVBAR
-   ============================================================ */
-
-const siteNav =
-  document.getElementById(
-    "siteNav"
-  );
-
-const onNavScroll = () => {
-  if (siteNav) {
-    siteNav.classList.toggle(
-      "scrolled",
-      window.scrollY > 35
-    );
-  }
-};
-
-window.addEventListener(
-  "scroll",
-  onNavScroll,
-  { passive: true }
-);
-
-onNavScroll();
-
-/* ============================================================
-   SECTION SCROLLSPY
-   ============================================================ */
-
-const spySections = [
-  "downloader",
-  "features",
-  "how",
-  "faq",
-];
-
-const navSpy =
-  new IntersectionObserver(
-    (entries) => {
-      for (const en of entries) {
-        if (!en.isIntersecting)
-          continue;
-
-        for (const link of document.querySelectorAll(
-          ".nav-link"
-        )) {
-          link.classList.toggle(
-            "navbar-active",
-            link.getAttribute("href") ===
-              "#" + en.target.id
-          );
-        }
-      }
-    },
-    {
-      rootMargin:
-        "-35% 0px -55% 0px",
-    }
-  );
-
-for (const id of spySections) {
-  const el =
-    document.getElementById(id);
-
-  if (el) navSpy.observe(el);
-}
-
-/* ============================================================
-   MOBILE MENU
-   ============================================================ */
-
-const hamburgerBtn =
-  document.getElementById(
-    "hamburgerBtn"
-  );
-
-const sideNav =
-  document.getElementById(
-    "sideNav"
-  );
-
-const sideOverlay =
-  document.getElementById(
-    "sideOverlay"
-  );
-
-const setSideOpen = (open) => {
-  if (!sideNav) return;
-
-  sideNav.classList.toggle(
-    "open",
-    open
-  );
-
-  sideNav.setAttribute(
-    "aria-hidden",
-    String(!open)
-  );
-
-  if (sideOverlay) {
-    sideOverlay.classList.toggle(
-      "visible",
-      open
-    );
-
-    sideOverlay.setAttribute(
-      "aria-hidden",
-      String(!open)
-    );
-  }
-
-  if (hamburgerBtn) {
-    hamburgerBtn.classList.toggle(
-      "hamburger-open",
-      open
-    );
-
-    hamburgerBtn.setAttribute(
-      "aria-expanded",
-      String(open)
-    );
-  }
-
-  document.body.style.overflow =
-    open ? "hidden" : "";
-};
-
-if (hamburgerBtn) {
-  hamburgerBtn.addEventListener(
-    "click",
-    () =>
-      setSideOpen(
-        !sideNav.classList.contains(
-          "open"
-        )
-      )
-  );
-
-  if (sideOverlay) {
-    sideOverlay.addEventListener(
-      "click",
-      () =>
-        setSideOpen(false)
-    );
-  }
-
-  if (sideNav) {
-    sideNav.addEventListener(
-      "click",
-      (e) => {
-        if (
-          e.target.closest("a")
-        ) {
-          setSideOpen(false);
-        }
-      }
-    );
-  }
-
-  document.addEventListener(
-    "keydown",
-    (e) => {
-      if (e.key === "Escape") {
-        setSideOpen(false);
-      }
-    }
-  );
-
-  window.addEventListener(
-    "resize",
-    () => {
-      if (window.innerWidth > 1023) {
-        setSideOpen(false);
-      }
-    }
-  );
-}
-
-/* ============================================================
-   SCROLL REVEAL
-   ============================================================ */
-
-const revealEls =
-  document.querySelectorAll(
-    ".reveal"
-  );
-
-if (
-  "IntersectionObserver" in
-  window
-) {
-  const revealObs =
-    new IntersectionObserver(
-      (entries, obs) => {
-        for (const en of entries) {
-          if (!en.isIntersecting)
-            continue;
-
-          en.target.classList.add(
-            "in-view"
-          );
-
-          obs.unobserve(
-            en.target
-          );
-        }
-      },
-      {
-        threshold: 0.12,
-        rootMargin:
-          "0px 0px -6% 0px",
-      }
-    );
-
-  for (const el of revealEls) {
-    revealObs.observe(el);
-  }
-} else {
-  for (const el of revealEls) {
-    el.classList.add("in-view");
-  }
-}
-
-/* ============================================================
-   HEADER SEARCH / DEMO
-   ============================================================ */
-
-const scrollToCardBtn =
-  document.getElementById(
-    "scrollToCardBtn"
-  );
-
-if (scrollToCardBtn) {
-  scrollToCardBtn.addEventListener(
-    "click",
-    () => {
-      urlInput.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-
-      setTimeout(
-        () => urlInput.focus(),
-        500
-      );
-    }
-  );
-}
-
-const focusDownloader = () => {
-  urlInput.scrollIntoView({
-    behavior: "smooth",
-    block: "center",
-  });
-
-  setTimeout(
-    () => urlInput.focus(),
-    500
-  );
-};
-
-if (
-  [
-    "reel",
-    "profile",
-    "audio",
-  ].includes(
-    (location.hash || "").replace(
-      /^#/,
-      ""
-    )
-  )
-) {
-  setTimeout(
-    focusDownloader,
-    100
-  );
-}
-
-/* ============================================================
-   INPUT PLACEHOLDER
-   ============================================================ */
-
-const inputWrap =
-  document.querySelector(
-    ".input-wrap"
-  );
-
-const phScroll =
-  document.querySelector(
-    ".ph-scroll"
-  );
-
-const phMarquee =
-  document.querySelector(
-    ".ph-marquee"
-  );
-
-if (
-  inputWrap &&
-  urlInput
-) {
-  const syncPh = () =>
-    inputWrap.classList.toggle(
-      "has-val",
-      urlInput.value.length > 0
-    );
-
-  urlInput.addEventListener(
-    "input",
-    syncPh
-  );
-
-  syncPh();
-}
-
-if (
-  phScroll &&
-  phMarquee
-) {
-  const syncMarq = () =>
-    phMarquee.classList.toggle(
-      "marq-on",
-      phMarquee.scrollWidth >
-        phScroll.clientWidth
-    );
-
-  window.addEventListener(
-    "resize",
-    syncMarq
-  );
-
-  syncMarq();
-}
-
-/* ============================================================
-   PASTE BUTTON
-   ============================================================ */
-
-const pasteBtn =
-  document.getElementById(
-    "pasteBtn"
-  );
-
-if (pasteBtn) {
-  pasteBtn.addEventListener(
-    "click",
-    async () => {
-      try {
-        const text =
-          await navigator.clipboard.readText();
-
-        if (
-          !text ||
-          !text.trim()
-        ) {
-          showError(
-            "Clipboard is empty — copy an Instagram link first, then press Paste."
-          );
-          return;
-        }
-
-        urlInput.value =
-          text.trim();
-
-        if (inputWrap) {
-          inputWrap.classList.add(
-            "has-val"
-          );
-        }
-
-        errorEl.classList.add(
-          "hidden"
-        );
-
-        if (
-          parseInput(
-            urlInput.value
-          ).kind !== "unknown"
-        ) {
-          downloadBtn.click();
-        }
-      } catch (e) {
-        showError(
-          "Couldn't read the clipboard — press Ctrl+V inside the box instead."
-        );
-
-        urlInput.focus();
-      }
-    }
-  );
-}
-
-/* ============================================================
-   URL PREFILL
-   ============================================================ */
-
-function prefillFromQuery() {
-  const params =
-    new URLSearchParams(
-      location.search
-    );
-
-  const raw =
-    params.get("url") ||
-    params.get("u");
-
-  if (!raw) return;
-
-  const val =
-    String(raw).trim();
-
-  if (
-    !/^https?:\/\//i.test(val) ||
-    /shortcut[- ]?input/i.test(val)
-  ) {
-    return;
-  }
-
-  urlInput.value = val;
-
-  if (inputWrap) {
-    inputWrap.classList.add(
-      "has-val"
-    );
-  }
-
-  errorEl.classList.add(
-    "hidden"
-  );
-
-  history.replaceState(
-    null,
-    "",
-    location.pathname +
-      location.hash
-  );
-
-  setTimeout(
-    () => downloadBtn.click(),
-    350
-  );
-}
-
-prefillFromQuery();
-
-/* ============================================================
-   SHORTCUT URL COPY
-   ============================================================ */
-
-const copyShortcutUrlBtn =
-  document.getElementById(
-    "copyShortcutUrlBtn"
-  );
-
-if (copyShortcutUrlBtn) {
-  copyShortcutUrlBtn.addEventListener(
-    "click",
-    async () => {
-      const codeEl =
-        document.getElementById(
-          "shortcutUrlCode"
-        );
-
-      try {
-        await navigator.clipboard.writeText(
-          codeEl
-            ? codeEl.textContent
-            : "https://instadrop.web.app/?url="
-        );
-
-        copyShortcutUrlBtn.textContent =
-          "Copied ✓";
-
-        setTimeout(() => {
-          copyShortcutUrlBtn.textContent =
-            "Copy URL template";
-        }, 2500);
-      } catch (e) {
-        showError(
-          "Couldn't copy — long-press the URL above instead."
-        );
-      }
-    }
-  );
-}
-
-/* ============================================================
-   FAQ
-   ============================================================ */
-
-for (const faq of document.querySelectorAll(
-  "details.accordion"
-)) {
-  faq.addEventListener(
-    "toggle",
-    () =>
-      faq.classList.toggle(
-        "accordion-open",
-        faq.open
-      )
-  );
-}
-
-/* ============================================================
-   URL PARSING
-   ============================================================ */
-
-function extractShortcode(url) {
-  const m = String(url)
-    .trim()
-    .match(
-      /instagram\.com\/(?:[A-Za-z0-9._]{1,30}\/)?(?:reel|p|reels|tv)\/([A-Za-z0-9_-]+)/
-    );
-
-  return m ? m[1] : null;
-}
-
-function parseInput(raw) {
-  const s =
-    String(raw).trim();
-
-  if (
-    /instagram\.com\/stories\/highlights\//i.test(
-      s
-    )
-  ) {
-    return {
-      kind: "highlight",
-      url: s,
-    };
-  }
-
-  if (
-    /instagram\.com\/stories\//i.test(
-      s
-    )
-  ) {
-    return {
-      kind: "story",
-      url: s,
-    };
-  }
-
-  const code =
-    extractShortcode(s);
-
-  if (code) {
-    return {
-      kind: "post",
-      code,
-      url: s,
-    };
-  }
-
-  const prof =
-    s.match(
-      /instagram\.com\/([A-Za-z0-9._]{1,30})\/?(?:\?.*)?$/i
-    );
-
-  if (
-    prof &&
-    !/^(reel|p|reels|tv|stories|highlights)$/i.test(
-      prof[1]
-    )
-  ) {
-    return {
-      kind: "dp",
-      username: prof[1],
-    };
-  }
-
-  if (
-    /^[A-Za-z0-9._]{1,30}$/.test(s)
-  ) {
-    return {
-      kind: "dp",
-      username: s,
-    };
-  }
-
-  return {
-    kind: "unknown",
-  };
-}
-
-/* ============================================================
-   DOWNLOADGRAM LEGACY PARSER
-   ============================================================ */
-
-function decodeDgResponse(body) {
-  let html = null;
-
-  try {
-    const loader = {
-      style: {},
-    };
-
-    const fakeDoc = {
-      getElementById(id) {
-        if (
-          id === "div_download"
-        ) {
-          return {
-            set innerHTML(v) {
-              html = v;
-            },
-          };
-        }
-
-        return {
-          remove() {},
-        };
-      },
-    };
-
-    new Function(
-      "loader",
-      "document",
-      "showAd",
-      body
-    )(
-      loader,
-      fakeDoc,
-      () => {}
-    );
-  } catch (e) {}
-
-  return html;
-}
-
-function extractItems(html) {
-  const doc =
-    new DOMParser().parseFromString(
-      html,
-      "text/html"
-    );
-
-  const items = [];
-
-  for (const block of doc.querySelectorAll(
-    ".download-items"
-  )) {
-    const img =
-      block.querySelector("img");
-
-    const link =
-      block.querySelector("a");
-
-    const thumb =
-      img &&
-      img.getAttribute("src");
-
-    const mediaUrl =
-      link &&
-      link.getAttribute("href");
-
-    if (!mediaUrl) continue;
-
-    const isVideo =
-      !!block.querySelector(
-        ".icon-ivideo"
-      );
-
-    items.push({
-      kind: isVideo
-        ? "video"
-        : "image",
-
-      thumb,
-      url: mediaUrl,
-    });
-  }
-
-  return items;
-}
-
-/* ============================================================
-   PRIMARY INSTADROP API
-   ============================================================ */
-
-async function fetchFromOwnApi(url) {
-  const target =
-    INSTADROP_API +
-    encodeURIComponent(
-      url
-    );
-
-  const response =
-    await withTimeout(
-      fetchLike(target),
-      60000,
-      "Instadrop API timed out."
-    );
-
-  if (!response.ok) {
-    throw new Error(
-      "Instadrop API returned HTTP " +
-        response.status
-    );
-  }
-
-  const text =
-    await response.text();
-
-  const items =
-    parseInstadropApiResponse(
-      text
-    );
-
-  if (!items.length) {
-    throw new Error(
-      "Your Instadrop API returned no downloadable media."
-    );
-  }
-
-  return items;
-}
-
-/* ============================================================
-   POST / REEL MEDIA
-   ============================================================ */
-
-async function fetchMedia(url) {
-  const code =
-    extractShortcode(url);
-
-  if (!code) {
-    throw new Error(
-      "That doesn't look like an Instagram reel/post link."
-    );
-  }
-
-  /*
-   * Always normalize post/reel links before sending
-   * them to your API.
-   *
-   * This makes /p/, /reel/, /reels/ and /tv/
-   * compatible with one consistent URL.
-   */
-  const cleanInstagramUrl =
-    "https://www.instagram.com/reel/" +
-    code +
-    "/";
-
-  /*
-   * ==========================================================
-   * 1. YOUR OWN API — PRIMARY
-   * ==========================================================
-   */
-  try {
-    const items =
-      await fetchFromOwnApi(
-        cleanInstagramUrl
-      );
-
-    if (
-      items &&
-      items.length
-    ) {
-      return {
-        code,
-        items,
-      };
-    }
-  } catch (e) {
-    console.warn(
-      "Instadrop API failed:",
-      e
-    );
-  }
-
-  /*
-   * ==========================================================
-   * 2. OPTIONAL PROXY
-   * ==========================================================
-   */
-  if (
-    PROXY ||
-    (window.root &&
-      window.root.superFetch)
-  ) {
-    try {
-      const data =
-        await withTimeout(
-          proxyResolve(
-            "/media",
-            {
-              url: cleanInstagramUrl,
-            }
-          ),
-          60000,
-          "The download service timed out."
-        );
-
-      if (
-        data &&
-        data.items &&
-        data.items.length
-      ) {
-        return {
-          code,
-          items: data.items,
-        };
-      }
-    } catch (e) {
-      console.warn(
-        "Proxy media resolver failed:",
-        e
-      );
-    }
-  }
-
-  /*
-   * ==========================================================
-   * 3. FALLBACK SERVICES
-   * ==========================================================
-   */
-  const items =
-    await firstWorking([
-      {
-        name: "thakur-infopd",
-
-        fetch: () =>
-          getText(
-            "https://insta.thakur-infopd.workers.dev/?url=" +
-              encodeURIComponent(
-                cleanInstagramUrl
-              )
-          ),
-
-        parse: jsonToItems,
-      },
-
-      {
-        name: "mn-bots",
-
-        fetch: () =>
-          getText(
-            "https://instagram-downloader.mn-bots.workers.dev/?url=" +
-              encodeURIComponent(
-                cleanInstagramUrl
-              )
-          ),
-
-        parse: (t) => {
-          let j;
-
-          try {
-            j = JSON.parse(t);
-          } catch (e) {
-            return [];
-          }
-
-          if (
-            !j.success ||
-            !j.media
-          ) {
-            return [];
-          }
-
-          return j.media
-            .map((m) => ({
-              kind:
-                m.type === "video" ||
-                /\.mp4/i.test(
-                  m.url || ""
-                )
-                  ? "video"
-                  : "image",
-
-              thumb:
-                m.thumb ||
-                null,
-
-              url:
-                m.url ||
-                m.server2 ||
-                null,
-            }))
-            .filter(
-              (m) => m.url
-            );
-        },
-      },
-
-      {
-        name: "anon-social",
-
-        fetch: () =>
-          getText(
-            "https://anon-social-info.vercel.app/igdl?key=igdl305&url=" +
-              encodeURIComponent(
-                cleanInstagramUrl
-              )
-          ),
-
-        parse: jsonToItems,
-      },
-
-      {
-        name: "ddvideo",
-
-        fetch: () =>
-          getText(
-            "https://api.dd.video/api/instagram?url=" +
-              encodeURIComponent(
-                cleanInstagramUrl
-              )
-          ),
-
-        parse: jsonToItems,
-      },
-
-      {
-        name: "snapinsta",
-
-        fetch: () =>
-          getText(
-            "https://snapinsta.app/api/instagram?url=" +
-              encodeURIComponent(
-                cleanInstagramUrl
-              )
-          ),
-
-        parse: jsonToItems,
-      },
-
-      {
-        name: "indown",
-
-        fetch: () =>
-          getText(
-            "https://indown.io/api/info?url=" +
-              encodeURIComponent(
-                cleanInstagramUrl
-              )
-          ),
-
-        parse: jsonToItems,
-      },
-    ]);
-
-  if (!items.length) {
-    throw new Error(
-      "No downloadable media was found in that post — please try again in a moment."
-    );
-  }
-
-  return {
-    code,
-    items,
-  };
-}
-
-/* ============================================================
-   STORY / HIGHLIGHT
-   ============================================================ */
-
-async function fetchStoryMedia(url) {
-  const isHl =
-    /\/highlights\//i.test(
-      url
-    );
-
-  /*
-   * YOUR API FIRST
-   */
-  try {
-    const items =
-      await fetchFromOwnApi(
-        url
-      );
-
-    if (
-      items &&
-      items.length
-    ) {
-      return {
-        items,
-      };
-    }
-  } catch (e) {
-    console.warn(
-      "Instadrop story/highlight API failed:",
-      e
-    );
-  }
-
-  /*
-   * OPTIONAL PROXY
-   */
-  if (
-    PROXY ||
-    (window.root &&
-      window.root.superFetch)
-  ) {
-    try {
-      const data =
-        await withTimeout(
-          proxyResolve(
-            "/story",
-            { url }
-          ),
-          60000,
-          "The download service timed out."
-        );
-
-      if (
-        data &&
-        data.items &&
-        data.items.length
-      ) {
-        return {
-          items: data.items,
-        };
-      }
-    } catch (e) {}
-  }
-
-  /*
-   * FALLBACK SERVICES
-   */
-  const items =
-    await firstWorking([
-      {
-        name: "thakur-infopd",
-
-        fetch: () =>
-          getText(
-            "https://insta.thakur-infopd.workers.dev/?url=" +
-              encodeURIComponent(url)
-          ),
-
-        parse: jsonToItems,
-      },
-
-      {
-        name: "mn-bots",
-
-        fetch: () =>
-          getText(
-            "https://instagram-downloader.mn-bots.workers.dev/?url=" +
-              encodeURIComponent(url)
-          ),
-
-        parse: (t) => {
-          let j;
-
-          try {
-            j = JSON.parse(t);
-          } catch (e) {
-            return [];
-          }
-
-          if (
-            !j.success ||
-            !j.media
-          ) {
-            return [];
-          }
-
-          return j.media
-            .map((m) => ({
-              kind:
-                m.type === "video" ||
-                /\.mp4/i.test(
-                  m.url || ""
-                )
-                  ? "video"
-                  : "image",
-
-              thumb:
-                m.thumb ||
-                null,
-
-              url:
-                m.url ||
-                m.server2 ||
-                null,
-            }))
-            .filter(
-              (m) => m.url
-            );
-        },
-      },
-
-      {
-        name: "anon-social",
-
-        fetch: () =>
-          getText(
-            "https://anon-social-info.vercel.app/igdl?key=igdl305&url=" +
-              encodeURIComponent(url)
-          ),
-
-        parse: jsonToItems,
-      },
-
-      {
-        name: "snapinsta",
-
-        fetch: () =>
-          getText(
-            "https://snapinsta.app/api/instagram?url=" +
-              encodeURIComponent(url)
-          ),
-
-        parse: jsonToItems,
-      },
-
-      {
-        name: "ddvideo",
-
-        fetch: () =>
-          getText(
-            "https://api.dd.video/api/instagram?url=" +
-              encodeURIComponent(url)
-          ),
-
-        parse: jsonToItems,
-      },
-
-      {
-        name: "indown",
-
-        fetch: () =>
-          getText(
-            "https://indown.io/api/info?url=" +
-              encodeURIComponent(url)
-          ),
-
-        parse: jsonToItems,
-      },
-    ]);
-
-  if (!items.length) {
-    throw new Error(
-      isHl
-        ? "Couldn't resolve that highlight — please try again in a moment."
-        : "Couldn't resolve that story right now — please try again in a moment."
-    );
-  }
-
-  return {
-    items,
-  };
-}
-
-/* ============================================================
-   MEDIA DOWNLOAD
-   ============================================================ */
-
-async function fetchBlob(
-  url,
-  tries = 2
-) {
-  const viaProxy =
-    PROXY
-      ? proxyFileUrl(url)
-      : url;
-
-  const urls =
-    PROXY &&
-    viaProxy !== url
-      ? [viaProxy, url]
-      : [url];
-
-  let lastErr;
-
-  for (
-    let i = 0;
-    i < tries;
-    i++
-  ) {
-    for (const target of urls) {
-      try {
-        const res =
-          await withTimeout(
-            fetchLike(target),
-            60000,
-            "The media host is busy right now."
-          );
-
-        if (!res.ok) {
-          throw new Error(
-            "Download failed (HTTP " +
-              res.status +
-              ")."
-          );
-        }
-
-        return await res.blob();
-      } catch (e) {
-        lastErr = e;
-      }
-    }
-
-    if (i < tries - 1) {
-      await sleep(2500);
-    }
-  }
-
-  throw lastErr;
-}
-
-function triggerSave(
-  blob,
-  filename
-) {
-  const a =
-    document.createElement(
-      "a"
-    );
-
-  a.href =
-    URL.createObjectURL(blob);
-
-  a.download = filename;
-
-  document.body.appendChild(a);
-
-  a.click();
-
-  a.remove();
-
-  setTimeout(
-    () =>
-      URL.revokeObjectURL(
-        a.href
-      ),
-    15000
-  );
-}
-
-/* ============================================================
-   MEDIA HELPERS
-   ============================================================ */
-
-function fmtDuration(sec) {
-  if (
-    !isFinite(sec) ||
-    sec <= 0
-  ) {
     return "";
   }
 
-  const m =
-    Math.floor(sec / 60);
-
-  const s =
-    Math.floor(sec % 60);
-
-  return (
-    m +
-    ":" +
-    String(s).padStart(
-      2,
-      "0"
-    )
-  );
-}
-
-function showError(msg) {
-  errorEl.textContent = msg;
-
-  errorEl.classList.remove(
-    "hidden"
-  );
-}
-
-function setBusy(
-  on,
-  text
-) {
-  downloadBtn.disabled =
-    on;
-
-  if (text) {
-    spinnerText.textContent =
-      text;
-  }
-
-  spinnerCtn.classList.toggle(
-    "hidden",
-    !on
-  );
-}
-
-function scrollToResults() {
-  resultCtn.scrollIntoView({
-    behavior: "smooth",
-    block: "start",
-  });
-}
-
-/* ============================================================
-   HISTORY
-   ============================================================ */
-
-function loadHistory() {
-  try {
-    return JSON.parse(
-      localStorage.getItem(
-        "instadrop_history"
-      ) || "[]"
-    );
-  } catch (e) {
-    return [];
-  }
-}
-
-function saveHistory(h) {
-  try {
-    localStorage.setItem(
-      "instadrop_history",
-      JSON.stringify(
-        h.slice(0, 8)
-      )
-    );
-  } catch (e) {}
-}
-
-function addHistory(entry) {
-  const h =
-    loadHistory().filter(
-      (x) =>
-        !(
-          x.kind ===
-            entry.kind &&
-          x.label ===
-            entry.label
-        )
-    );
-
-  h.unshift(entry);
-
-  saveHistory(h);
-
-  renderHistory();
-}
-
-function renderHistory() {
-  const h =
-    loadHistory();
-
-  histRow.classList.toggle(
-    "hidden",
-    h.length === 0
-  );
-
-  histRow.innerHTML = "";
-
-  if (!h.length) return;
-
-  const lbl =
-    document.createElement(
-      "span"
-    );
-
-  lbl.className = "lbl";
-  lbl.textContent = "Recent:";
-
-  histRow.appendChild(lbl);
-
-  for (const entry of h) {
-    const c =
-      document.createElement(
-        "button"
-      );
-
-    c.className = "chip";
-    c.textContent =
-      entry.label;
-
-    c.addEventListener(
-      "click",
-      () => {
-        urlInput.value =
-          entry.input;
-
-        if (inputWrap) {
-          inputWrap.classList.add(
-            "has-val"
-          );
-        }
-
-        downloadBtn.click();
-      }
-    );
-
-    histRow.appendChild(c);
-  }
-
-  const cl =
-    document.createElement(
-      "button"
-    );
-
-  cl.className =
-    "chip clear";
-
-  cl.textContent = "clear";
-
-  cl.addEventListener(
-    "click",
-    () => {
-      saveHistory([]);
-      renderHistory();
+  function detectMediaType(object, url) {
+    if (!object || typeof object !== "object") {
+      return "image";
     }
-  );
 
-  histRow.appendChild(cl);
-}
-
-renderHistory();
-
-/* ============================================================
-   FFMPEG
-   ============================================================ */
-
-let ffmpegReady = null;
-
-function getFfmpeg() {
-  if (ffmpegReady) {
-    return ffmpegReady;
-  }
-
-  ffmpegReady =
-    (async () => {
-      const coreJs =
-        await (
-          await fetch(
-            FFMPEG_CORE
-          )
-        ).text();
-
-      const coreUrl =
-        URL.createObjectURL(
-          new Blob(
-            [coreJs],
-            {
-              type:
-                "text/javascript",
-            }
-          )
-        );
-
-      const frag = btoa(
-        JSON.stringify({
-          wasmURL:
-            FFMPEG_WASM,
-
-          workerURL: "",
-        })
-      );
-
-      const msbo =
-        coreUrl +
-        "#" +
-        frag;
-
-      const src =
-        "importScripts(" +
-        JSON.stringify(
-          coreUrl
-        ) +
-        ");\n" +
-
-        "self.onmessage = async (e) => {\n" +
-
-        "  if (e.data.load) {\n" +
-
-        "    try { self.__mod = await createFFmpegCore({ mainScriptUrlOrBlob: " +
-        JSON.stringify(
-          msbo
-        ) +
-        " }); self.postMessage({ ok: true }); }\n" +
-
-        "    catch (err) { self.postMessage({ err: String(err) }); }\n" +
-
-        "  } else if (e.data.data) {\n" +
-
-        "    try {\n" +
-
-        "      const mod = self.__mod;\n" +
-
-        "      mod.FS.writeFile(e.data.input, new Uint8Array(e.data.data));\n" +
-
-        "      const ret = mod.exec(...e.data.args);\n" +
-
-        "      const out = mod.FS.readFile(e.data.output);\n" +
-
-        "      const buf = out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength);\n" +
-
-        "      self.postMessage({ mp3: buf }, [buf]);\n" +
-
-        "    } catch (err) { self.postMessage({ err: String(err) }); }\n" +
-
-        "  }\n" +
-
-        "};\n";
-
-      const worker =
-        new Worker(
-          URL.createObjectURL(
-            new Blob(
-              [src],
-              {
-                type:
-                  "text/javascript",
-              }
-            )
-          )
-        );
-
-      await new Promise(
-        (
-          resolve,
-          reject
-        ) => {
-          worker.onmessage =
-            (e) =>
-              e.data &&
-              e.data.ok
-                ? resolve()
-                : reject(
-                    new Error(
-                      (e.data &&
-                        e.data.err) ||
-                        "Failed to start audio converter."
-                    )
-                  );
-
-          worker.onerror =
-            (e) =>
-              reject(
-                new Error(
-                  e.message
-                )
-              );
-
-          worker.postMessage({
-            load: true,
-          });
-        }
-      );
-
-      return worker;
-    })();
-
-  ffmpegReady.catch(
-    () => {
-      ffmpegReady = null;
-    }
-  );
-
-  return ffmpegReady;
-}
-
-let audioQueue =
-  Promise.resolve();
-
-function convertToMp3(
-  bytes
-) {
-  const run =
-    audioQueue.then(
-      async () => {
-        const worker =
-          await getFfmpeg();
-
-        return await new Promise(
-          (
-            resolve,
-            reject
-          ) => {
-            const timeout =
-              setTimeout(
-                () =>
-                  reject(
-                    new Error(
-                      "Audio conversion timed out."
-                    )
-                  ),
-                240000
-              );
-
-            worker.onmessage =
-              (e) => {
-                if (
-                  e.data &&
-                  e.data.mp3
-                ) {
-                  clearTimeout(
-                    timeout
-                  );
-
-                  resolve(
-                    new Uint8Array(
-                      e.data.mp3
-                    )
-                  );
-                } else if (
-                  e.data &&
-                  e.data.err
-                ) {
-                  clearTimeout(
-                    timeout
-                  );
-
-                  reject(
-                    new Error(
-                      e.data.err
-                    )
-                  );
-                }
-              };
-
-            worker.onerror =
-              (e) => {
-                clearTimeout(
-                  timeout
-                );
-
-                reject(
-                  new Error(
-                    e.message
-                  )
-                );
-              };
-
-            worker.postMessage(
-              {
-                input:
-                  "in.mp4",
-
-                output:
-                  "out.mp3",
-
-                args: [
-                  "-i",
-                  "in.mp4",
-                  "-vn",
-                  "-acodec",
-                  "libmp3lame",
-                  "-q:a",
-                  "4",
-                  "out.mp3",
-                ],
-
-                data: bytes,
-              },
-              [bytes.buffer]
-            );
-          }
-        );
-      }
-    );
-
-  audioQueue =
-    run.catch(
-      () => {}
-    );
-
-  return run;
-}
-
-/* ============================================================
-   PROFILE PICTURE
-   ============================================================ */
-
-async function resolveAvatar(
-  username
-) {
-  /* 1. GreatOnlineTools */
-  try {
-    const response =
-      await fetchLike(
-        "https://greatonlinetools.com/endpoints-tools/endpoint.php",
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            username:
-              username,
-          }),
-        }
-      );
-
-    const data =
-      await response.json();
+    const explicitType =
+      String(
+        object.type ||
+        object.media_type ||
+        object.mediaType ||
+        object.kind ||
+        ""
+      ).toLowerCase();
 
     if (
-      data &&
-      data.status
+      explicitType.includes("video") ||
+      explicitType.includes("mp4")
     ) {
-      const picUrl =
-        data.downloadUrl ||
-        data.profilePictureUrl;
-
-      if (picUrl) {
-        return {
-          url: cleanUrl(
-            picUrl
-          ),
-          src:
-            "greatonlinetools",
-        };
-      }
+      return "video";
     }
-  } catch (e) {
-    console.warn(
-      "greatonlinetools DP lookup failed:",
-      e
-    );
-  }
-
-  /* 2. Original Worker */
-  try {
-    const targetUrl =
-      "https://bj-insta-profile-info.mmabbas011687.workers.dev/info?username=" +
-      encodeURIComponent(
-        username
-      );
-
-    const response =
-      await fetchLike(
-        "https://api.allorigins.win/get?url=" +
-          encodeURIComponent(
-            targetUrl
-          )
-      );
-
-    const wrappedData =
-      await response.json();
 
     if (
-      wrappedData &&
-      wrappedData.contents
+      explicitType.includes("image") ||
+      explicitType.includes("photo") ||
+      explicitType.includes("picture")
     ) {
-      const data =
-        JSON.parse(
-          wrappedData.contents
-        );
-
-      if (
-        data &&
-        data.pic
-      ) {
-        return {
-          url: cleanUrl(
-            data.pic
-          ),
-          src:
-            "profile-info",
-        };
-      }
+      return "image";
     }
-  } catch (e) {
-    console.warn(
-      "DP proxy lookup failed:",
-      e
+
+    const videoUrl = getFirstUrl(
+      object,
+      VIDEO_KEYS
     );
+
+    if (videoUrl) {
+      return "video";
+    }
+
+    const lowerUrl = String(url || "").toLowerCase();
+
+    if (
+      lowerUrl.includes(".mp4") ||
+      lowerUrl.includes(".m3u8") ||
+      lowerUrl.includes("video")
+    ) {
+      return "video";
+    }
+
+    return "image";
   }
 
-  /* 3. Optional proxy */
-  if (
-    PROXY ||
-    (window.root &&
-      window.root.superFetch)
-  ) {
-    try {
-      const data =
-        await withTimeout(
-          proxyResolve(
-            "/profile",
-            {
-              username,
-            }
-          ),
-          30000,
-          "Profile lookup timed out."
-        );
+  function createItemFromObject(object) {
+    if (!object || typeof object !== "object") {
+      return null;
+    }
 
-      if (
-        data &&
-        data.profilePicUrl
-      ) {
-        return {
-          url:
-            data.profilePicUrl,
-          src:
-            "instagram",
-        };
-      }
-    } catch (e) {}
+    const videoUrl = getFirstUrl(
+      object,
+      VIDEO_KEYS
+    );
+
+    const imageUrl = getFirstUrl(
+      object,
+      IMAGE_KEYS
+    );
+
+    const genericUrl = getFirstUrl(
+      object,
+      URL_KEYS
+    );
+
+    const mediaUrl =
+      videoUrl ||
+      imageUrl ||
+      genericUrl;
+
+    if (!mediaUrl) {
+      return null;
+    }
+
+    const type = detectMediaType(
+      object,
+      mediaUrl
+    );
+
+    const thumbnail =
+      getFirstUrl(object, THUMB_KEYS) ||
+      (type === "image" ? mediaUrl : null);
+
+    const title =
+      getFirstString(object, TITLE_KEYS);
+
+    return {
+      url: mediaUrl,
+      type,
+      thumbnail,
+      title,
+      duration:
+        object.duration ||
+        object.duration_seconds ||
+        object.durationSeconds ||
+        null
+    };
   }
 
-  throw new Error(
-    "Couldn't find a profile picture for @" +
-      username +
-      " (the APIs may be blocked or the profile is private)."
-  );
-}
+  function addUniqueItem(items, item) {
+    if (!item || !item.url) {
+      return;
+    }
 
-/* ============================================================
-   UI RENDERERS
-   ============================================================ */
-
-function metaBar(rowEl) {
-  const meta =
-    document.createElement(
-      "div"
+    const exists = items.some(
+      existing => existing.url === item.url
     );
 
-  meta.className = "meta";
+    if (!exists) {
+      items.push(item);
+    }
+  }
 
-  const row =
-    document.createElement(
-      "div"
-    );
+  function jsonToItems(data) {
+    const items = [];
+    const visited = new WeakSet();
 
-  row.className = "row";
-
-  row.appendChild(rowEl);
-
-  meta.appendChild(row);
-
-  return meta;
-}
-
-function wrapResult(htmlEl) {
-  const card =
-    document.createElement(
-      "div"
-    );
-
-  card.className =
-    "result-card";
-
-  card.appendChild(
-    htmlEl
-  );
-
-  return card;
-}
-
-/* ============================================================
-   RENDER MEDIA ITEMS
-   ============================================================ */
-
-async function renderItems(
-  data,
-  opts,
-  input
-) {
-  const who =
-    document.createElement(
-      "span"
-    );
-
-  who.className = "who";
-
-  who.textContent =
-    opts.label ||
-    (data.items.length > 1
-      ? data.items.length +
-        " media items"
-      : "1 media item");
-
-  const open =
-    document.createElement(
-      "a"
-    );
-
-  open.className = "open";
-
-  open.href =
-    opts.openUrl;
-
-  open.target = "_blank";
-
-  open.rel =
-    "noopener noreferrer";
-
-  open.textContent =
-    opts.openLabel ||
-    "Open ↗";
-
-  const metaEl =
-    metaBar(who);
-
-  metaEl
-    .querySelector(
-      ".row"
-    )
-    .appendChild(open);
-
-  const card =
-    wrapResult(metaEl);
-
-  resultCtn.appendChild(
-    card
-  );
-
-  data.items.forEach(
-    (item, i) => {
-      const box =
-        document.createElement(
-          "div"
-        );
-
-      box.className = "item";
-
-      const ext =
-        item.kind === "video"
-          ? "mp4"
-          : "jpg";
-
-      const filename =
-        opts.filePrefix +
-        (data.items.length > 1
-          ? "_" + (i + 1)
-          : "") +
-        "." +
-        ext;
-
-      const frame =
-        document.createElement(
-          "div"
-        );
-
-      frame.className =
-        "media-frame";
-
-      const hint =
-        document.createElement(
-          "div"
-        );
-
-      hint.className =
-        "frame-hint";
-
-      hint.innerHTML =
-        '<div class="spinner"></div><span>Loading preview…</span>';
-
-      frame.appendChild(
-        hint
-      );
-
-      box.appendChild(
-        frame
-      );
-
-      const row =
-        document.createElement(
-          "div"
-        );
-
-      row.className =
-        "dl-row";
-
-      const saveBtn =
-        document.createElement(
-          "button"
-        );
-
-      saveBtn.className =
-        "dl-btn";
-
-      saveBtn.disabled = true;
-
-      saveBtn.textContent =
-        "Download";
-
-      saveBtn.title =
-        "Downloads straight to your device.";
-
-      row.appendChild(
-        saveBtn
-      );
-
-      const audioBtn =
-        item.kind === "video"
-          ? document.createElement(
-              "button"
-            )
-          : null;
-
-      if (audioBtn) {
-        audioBtn.className =
-          "dl-btn alt";
-
-        audioBtn.disabled = true;
-
-        audioBtn.textContent =
-          "Audio (MP3)";
-
-        audioBtn.title =
-          "Extracts audio as MP3.";
-
-        row.appendChild(
-          audioBtn
-        );
+    function walk(value, depth = 0) {
+      if (depth > 12) {
+        return;
       }
 
-      box.appendChild(
-        row
-      );
-
-      card.appendChild(
-        box
-      );
-
-      frame.innerHTML = "";
-
-      if (
-        item.kind ===
-        "video"
-      ) {
-        const v =
-          document.createElement(
-            "video"
-          );
-
-        v.controls = true;
-
-        v.playsInline = true;
-
-        v.preload = "metadata";
-
-        v.src = item.url;
-
-        const badge =
-          document.createElement(
-            "span"
-          );
-
-        badge.className =
-          "media-badge hidden";
-
-        v.addEventListener(
-          "loadedmetadata",
-          () => {
-            badge.textContent =
-              fmtDuration(
-                v.duration
-              ) +
-              " · " +
-              v.videoWidth +
-              "×" +
-              v.videoHeight;
-
-            badge.classList.remove(
-              "hidden"
-            );
-          }
-        );
-
-        frame.appendChild(
-          v
-        );
-
-        frame.appendChild(
-          badge
-        );
-      } else {
-        const im =
-          document.createElement(
-            "img"
-          );
-
-        im.src =
-          item.url;
-
-        im.alt =
-          "Instagram image";
-
-        im.loading = "lazy";
-
-        frame.appendChild(
-          im
-        );
+      if (value === null || value === undefined) {
+        return;
       }
 
       /*
-       * Download media once so:
-       * - Download button is fast
-       * - MP3 conversion can reuse video bytes
+       * Direct string URL
        */
-      fetchBlob(item.url)
-        .then(
-          async (blob) => {
-            const mb =
-              (
-                blob.size /
-                1048576
-              ).toFixed(1);
+      if (typeof value === "string") {
+        const url = absoluteUrl(value);
 
-            const bytes =
-              item.kind ===
-              "video"
-                ? new Uint8Array(
-                    await blob.arrayBuffer()
-                  )
-                : null;
+        if (url) {
+          addUniqueItem(items, {
+            url,
+            type:
+              url.toLowerCase().includes(".mp4") ||
+              url.toLowerCase().includes("video")
+                ? "video"
+                : "image",
+            thumbnail:
+              url.toLowerCase().includes(".mp4")
+                ? null
+                : url,
+            title: "",
+            duration: null
+          });
+        }
 
-            saveBtn.disabled =
-              false;
+        return;
+      }
 
-            saveBtn.textContent =
-              "Download (" +
-              mb +
-              " MB)";
+      if (typeof value !== "object") {
+        return;
+      }
 
-            saveBtn.onclick =
-              () =>
-                triggerSave(
-                  blob,
-                  filename
-                );
+      if (visited.has(value)) {
+        return;
+      }
 
-            if (audioBtn) {
-              audioBtn.disabled =
-                false;
+      visited.add(value);
 
-              audioBtn.onclick =
-                async () => {
-                  audioBtn.disabled =
-                    true;
+      /*
+       * Direct media object
+       */
+      const item = createItemFromObject(value);
 
-                  audioBtn.textContent =
-                    "Preparing audio…";
+      if (item) {
+        addUniqueItem(items, item);
+      }
 
-                  if (
-                    !ffmpegReady
-                  ) {
-                    spinnerCtn.classList.remove(
-                      "hidden"
-                    );
+      /*
+       * Common arrays.
+       */
+      for (const key of [
+        "items",
+        "data",
+        "results",
+        "result",
+        "media",
+        "medias",
+        "mediaItems",
+        "media_items",
+        "posts",
+        "reels",
+        "videos",
+        "images",
+        "photos",
+        "resources",
+        "edges",
+        "nodes",
+        "children",
+        "carousel",
+        "carousel_media",
+        "carouselMedia"
+      ]) {
+        if (value[key] !== undefined) {
+          walk(value[key], depth + 1);
+        }
+      }
 
-                    spinnerText.textContent =
-                      "Downloading audio converter (one-time)…";
-                  }
+      /*
+       * Generic recursive traversal.
+       */
+      for (const [key, child] of Object.entries(value)) {
+        if (
+          [
+            "url",
+            "download",
+            "download_url",
+            "downloadUrl",
+            "media_url",
+            "mediaUrl",
+            "video_url",
+            "videoUrl",
+            "image_url",
+            "imageUrl",
+            "thumbnail",
+            "thumbnail_url",
+            "thumbnailUrl"
+          ].includes(key)
+        ) {
+          continue;
+        }
 
-                  try {
-                    const mp3 =
-                      await convertToMp3(
-                        bytes
-                      );
-
-                    spinnerCtn.classList.add(
-                      "hidden"
-                    );
-
-                    triggerSave(
-                      new Blob(
-                        [mp3],
-                        {
-                          type:
-                            "audio/mpeg",
-                        }
-                      ),
-                      filename.replace(
-                        /\.mp4$/,
-                        ".mp3"
-                      )
-                    );
-
-                    audioBtn.textContent =
-                      "MP3 saved ✓";
-
-                    setTimeout(
-                      () => {
-                        audioBtn.textContent =
-                          "Audio (MP3)";
-
-                        audioBtn.disabled =
-                          false;
-                      },
-                      4000
-                    );
-                  } catch (e) {
-                    spinnerCtn.classList.add(
-                      "hidden"
-                    );
-
-                    showError(
-                      "Audio failed: " +
-                        e.message
-                    );
-
-                    audioBtn.textContent =
-                      "Audio (MP3)";
-
-                    audioBtn.disabled =
-                      false;
-                  }
-                };
-            }
-          }
-        )
-        .catch(() => {
-          const note =
-            document.createElement(
-              "div"
-            );
-
-          note.className =
-            "frame-hint";
-
-          note.textContent =
-            "Preview shown above. Media host is busy — use the Download button.";
-
-          frame.appendChild(
-            note
-          );
-
-          saveBtn.textContent =
-            "Download (busy)";
-
-          if (audioBtn) {
-            audioBtn.textContent =
-              "Audio (needs preview)";
-          }
-        });
+        if (
+          child &&
+          typeof child === "object"
+        ) {
+          walk(child, depth + 1);
+        }
+      }
     }
-  );
 
-  addHistory({
-    kind:
-      opts.historyKind ||
-      "post",
+    walk(data);
 
-    label:
-      opts.historyLabel,
+    /*
+     * If parser found nothing but data itself is a
+     * direct URL-like property, try it one more time.
+     */
+    if (!items.length && data) {
+      const direct = createItemFromObject(data);
 
-    input,
-  });
-}
-
-/* ============================================================
-   POST RENDER
-   ============================================================ */
-
-async function renderPost(
-  data,
-  input
-) {
-  await renderItems(
-    data,
-    {
-      openUrl:
-        "https://www.instagram.com/reel/" +
-        data.code +
-        "/",
-
-      label:
-        data.items.length > 1
-          ? data.items.length +
-            " media items"
-          : "1 media item",
-
-      filePrefix:
-        "instagram_" +
-        data.code,
-
-      historyKind:
-        "post",
-
-      historyLabel:
-        data.code,
-    },
-    input
-  );
-}
-
-/* ============================================================
-   DP RENDER
-   ============================================================ */
-
-async function renderDp(
-  username,
-  input
-) {
-  const who =
-    document.createElement(
-      "span"
-    );
-
-  who.className = "who";
-
-  who.textContent =
-    "Profile picture of @" +
-    username;
-
-  const open =
-    document.createElement(
-      "a"
-    );
-
-  open.className = "open";
-
-  open.href =
-    "https://www.instagram.com/" +
-    encodeURIComponent(
-      username
-    ) +
-    "/";
-
-  open.target = "_blank";
-
-  open.rel =
-    "noopener noreferrer";
-
-  open.textContent =
-    "Open profile ↗";
-
-  const metaEl =
-    metaBar(who);
-
-  metaEl
-    .querySelector(
-      ".row"
-    )
-    .appendChild(open);
-
-  const card =
-    wrapResult(metaEl);
-
-  resultCtn.appendChild(
-    card
-  );
-
-  const box =
-    document.createElement(
-      "div"
-    );
-
-  box.className = "item";
-
-  const frame =
-    document.createElement(
-      "div"
-    );
-
-  frame.className =
-    "media-frame dp-avatar";
-
-  const hint =
-    document.createElement(
-      "div"
-    );
-
-  hint.className =
-    "frame-hint";
-
-  hint.innerHTML =
-    '<div class="spinner"></div><span>Fetching profile…</span>';
-
-  frame.appendChild(
-    hint
-  );
-
-  box.appendChild(
-    frame
-  );
-
-  const row =
-    document.createElement(
-      "div"
-    );
-
-  row.className =
-    "dl-row";
-
-  const btn =
-    document.createElement(
-      "button"
-    );
-
-  btn.className =
-    "dl-btn";
-
-  btn.disabled = true;
-
-  btn.textContent =
-    "Preparing…";
-
-  row.appendChild(btn);
-
-  box.appendChild(row);
-
-  card.appendChild(box);
-
-  const avatar =
-    await resolveAvatar(
-      username
-    );
-
-  frame.innerHTML = "";
-
-  const im =
-    document.createElement(
-      "img"
-    );
-
-  im.src =
-    avatar.url;
-
-  im.alt =
-    "@" +
-    username +
-    " profile picture";
-
-  frame.appendChild(im);
-
-  const badge =
-    document.createElement(
-      "span"
-    );
-
-  badge.className =
-    "media-badge";
-
-  badge.textContent =
-    "…";
-
-  frame.appendChild(
-    badge
-  );
-
-  const dims =
-    await new Promise(
-      (res) => {
-        const probe =
-          new Image();
-
-        probe.onload =
-          () =>
-            res({
-              w: probe.naturalWidth,
-              h: probe.naturalHeight,
-            });
-
-        probe.onerror =
-          () => res(null);
-
-        probe.src =
-          avatar.url;
+      if (direct) {
+        items.push(direct);
       }
+    }
+
+    return items;
+  }
+
+  function normalizeApiResponse(data) {
+    /*
+     * Some Workers return:
+     * {
+     *   success: true,
+     *   data: [...]
+     * }
+     *
+     * Others:
+     * {
+     *   status: "success",
+     *   result: [...]
+     * }
+     *
+     * jsonToItems handles all of these recursively.
+     */
+
+    const items = jsonToItems(data);
+
+    /*
+     * Remove obviously invalid URLs.
+     */
+    return items.filter(
+      item =>
+        item &&
+        item.url &&
+        isMediaUrl(item.url)
     );
+  }
 
-  const nw =
-    dims
-      ? dims.w
-      : "?";
+  /* =========================================================
+     MEDIA RESOLUTION
+     ========================================================= */
 
-  const nh =
-    dims
-      ? dims.h
-      : "?";
+  async function fetchMedia(url) {
+    const response = await callInstagramApi(url);
+    const items = normalizeApiResponse(response);
 
-  badge.textContent =
-    nw +
-    "×" +
-    nh +
-    (dims
-      ? " · original"
-      : "");
+    if (!items.length) {
+      throw new Error(
+        "No downloadable media was found in your API response."
+      );
+    }
 
-  btn.disabled =
-    false;
-
-  btn.textContent =
-    "Download profile pic (" +
-    nw +
-    "×" +
-    nh +
-    ")";
-
-  btn.onclick =
-    async () => {
-      try {
-        const blob =
-          await withTimeout(
-            fetchBlob(
-              avatar.url,
-              1
-            ),
-            25000,
-            "Download timed out."
-          );
-
-        triggerSave(
-          blob,
-          username +
-            "_profile_pic_" +
-            nw +
-            "x" +
-            nh +
-            ".jpg"
-        );
-      } catch (e) {
-        window.open(
-          avatar.url,
-          "_blank"
-        );
-
-        showError(
-          "Your browser blocked direct download. Opened picture in new tab — right click and save image."
-        );
-      }
+    return {
+      items,
+      raw: response
     };
+  }
 
-  addHistory({
-    kind: "dp",
-    label:
-      "@" + username,
-    input,
-  });
-}
+  async function fetchStoryMedia(url) {
+    return fetchMedia(url);
+  }
 
-/* ============================================================
-   MAIN DOWNLOAD ACTION
-   ============================================================ */
+  /* =========================================================
+     DOWNLOAD MEDIA
+     ========================================================= */
 
-downloadBtn.addEventListener(
-  "click",
-  async () => {
-    const input =
-      urlInput.value.trim();
-
-    errorEl.classList.add(
-      "hidden"
-    );
-
-    resultCtn.classList.add(
-      "hidden"
-    );
-
-    resultCtn.innerHTML = "";
-
-    const parsed =
-      parseInput(input);
-
-    if (
-      parsed.kind ===
-      "unknown"
-    ) {
-      showError(
-        "Paste a full Instagram link (reel/post, story or highlight), a profile link, or a bare username."
-      );
-
-      return;
+  async function fetchBlob(url, tries = 2) {
+    if (!url) {
+      throw new Error("Media URL is missing.");
     }
 
-    /* ========================================================
-       STORY / HIGHLIGHT
-       ======================================================== */
+    let lastError = null;
 
-    if (
-      parsed.kind ===
-        "story" ||
-      parsed.kind ===
-        "highlight"
-    ) {
-      resultCtn.classList.remove(
-        "hidden"
-      );
-
-      setBusy(
-        true,
-
-        parsed.kind ===
-          "highlight"
-          ? "Looking up the highlight…"
-          : "Looking up the story…"
-      );
-
+    for (let attempt = 0; attempt < tries; attempt++) {
       try {
-        const data =
-          await fetchStoryMedia(
-            parsed.url
+        const response = await fetchLike(url, {
+          method: "GET"
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `Media request failed (${response.status}).`
           );
+        }
 
-        const id =
-          parsed.kind ===
-          "highlight"
-            ? (
-                parsed.url.match(
-                  /highlights\/(\d+)/i
-                ) || []
-              )[1] ||
-              "highlight"
-            : "story";
+        const blob = await response.blob();
 
-        await renderItems(
-          data,
-          {
-            openUrl:
-              parsed.url,
+        if (!blob || blob.size === 0) {
+          throw new Error(
+            "Downloaded file is empty."
+          );
+        }
 
-            label:
-              (parsed.kind ===
-              "highlight"
-                ? "Highlight"
-                : "Story") +
-              " · " +
-              (data.items
-                .length > 1
-                ? data.items
-                    .length +
-                  " media items"
-                : "1 media item"),
+        return blob;
+      } catch (error) {
+        lastError = error;
 
-            filePrefix:
-              parsed.kind ===
-              "highlight"
-                ? "highlight_" +
-                  id
-                : "story",
-
-            authorUrl:
-              null,
-
-            historyKind:
-              parsed.kind,
-
-            historyLabel:
-              parsed.kind ===
-              "highlight"
-                ? "highlight " +
-                  id
-                : "story",
-          },
-          input
-        );
-
-        scrollToResults();
-      } catch (e) {
-        showError(
-          e && e.message
-            ? e.message
-            : String(e)
-        );
-      } finally {
-        setBusy(false);
+        if (attempt < tries - 1) {
+          await sleep(500);
+        }
       }
-
-      return;
     }
 
-    /* ========================================================
-       POST / REEL / PROFILE
-       ======================================================== */
+    throw lastError ||
+      new Error("Unable to download media.");
+  }
 
-    setBusy(
-      true,
+  function getFileExtension(item, blob) {
+    const type =
+      String(
+        blob?.type ||
+        ""
+      ).toLowerCase();
 
-      parsed.kind ===
-        "post"
-        ? "Resolving the post…"
-        : "Looking up @" +
-            parsed.username +
-            "…"
-    );
+    if (
+      item.type === "video" ||
+      type.includes("video")
+    ) {
+      return "mp4";
+    }
+
+    if (
+      type.includes("webp")
+    ) {
+      return "webp";
+    }
+
+    if (
+      type.includes("png")
+    ) {
+      return "png";
+    }
+
+    return "jpg";
+  }
+
+  function cleanFilename(value) {
+    return String(value || "")
+      .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
+      .replace(/\s+/g, "_")
+      .slice(0, 100) || "instadrop";
+  }
+
+  async function triggerSave(
+    blob,
+    filename
+  ) {
+    const objectUrl =
+      URL.createObjectURL(blob);
 
     try {
-      resultCtn.classList.remove(
-        "hidden"
+      const anchor =
+        document.createElement("a");
+
+      anchor.href = objectUrl;
+      anchor.download =
+        cleanFilename(filename);
+
+      anchor.style.display = "none";
+
+      document.body.appendChild(anchor);
+
+      anchor.click();
+
+      anchor.remove();
+    } finally {
+      setTimeout(() => {
+        URL.revokeObjectURL(objectUrl);
+      }, 1000);
+    }
+  }
+
+  /* =========================================================
+     MP3
+     =========================================================
+
+     No external FFmpeg CDN is loaded.
+
+     If your HTML already provides FFmpeg through your own
+     code, this function can use it. Otherwise the MP3
+     button will report that conversion is unavailable.
+     ========================================================= */
+
+  async function convertToMp3() {
+    throw new Error(
+      "MP3 conversion is not enabled because no external FFmpeg service is used."
+    );
+  }
+
+  /* =========================================================
+     DURATION
+     ========================================================= */
+
+  function fmtDuration(seconds) {
+    if (
+      seconds === null ||
+      seconds === undefined ||
+      seconds === ""
+    ) {
+      return "";
+    }
+
+    const total =
+      Math.max(
+        0,
+        Math.round(Number(seconds))
       );
 
-      if (
-        parsed.kind ===
-        "post"
-      ) {
-        await renderPost(
-          await fetchMedia(
-            input
-          ),
-          input
+    if (!Number.isFinite(total)) {
+      return "";
+    }
+
+    const minutes =
+      Math.floor(total / 60);
+
+    const secs =
+      total % 60;
+
+    return `${minutes}:${String(secs).padStart(2, "0")}`;
+  }
+
+  /* =========================================================
+     UI
+     ========================================================= */
+
+  const input =
+    $(
+      "#urlInput, #downloadInput, input[name='url'], input[type='url']"
+    );
+
+  const downloadBtn =
+    $(
+      "#downloadBtn, #downloadButton, [data-download]"
+    );
+
+  const pasteBtn =
+    $(
+      "#pasteBtn, #pasteButton, [data-paste]"
+    );
+
+  const spinner =
+    $(
+      "#spinner, .spinner, [data-spinner]"
+    );
+
+  const errorBox =
+    $(
+      "#error, #errorMessage, .error-message, [data-error]"
+    );
+
+  const results =
+    $(
+      "#results, #result, .results, [data-results]"
+    );
+
+  const resultsSection =
+    $(
+      "#resultsSection, .results-section, [data-results-section]"
+    );
+
+  function setBusy(busy) {
+    if (downloadBtn) {
+      downloadBtn.disabled = busy;
+
+      if (busy) {
+        downloadBtn.setAttribute(
+          "aria-busy",
+          "true"
         );
       } else {
-        await renderDp(
-          parsed.username,
-          input
+        downloadBtn.removeAttribute(
+          "aria-busy"
+        );
+      }
+    }
+
+    if (spinner) {
+      spinner.hidden = !busy;
+      spinner.style.display =
+        busy ? "" : "none";
+    }
+  }
+
+  function showError(message) {
+    if (!errorBox) {
+      return;
+    }
+
+    errorBox.textContent =
+      String(message || "Something went wrong.");
+
+    errorBox.hidden = false;
+    errorBox.style.display = "";
+
+    errorBox.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest"
+    });
+  }
+
+  function clearError() {
+    if (!errorBox) {
+      return;
+    }
+
+    errorBox.textContent = "";
+    errorBox.hidden = true;
+    errorBox.style.display = "none";
+  }
+
+  function clearResults() {
+    if (!results) {
+      return;
+    }
+
+    results.innerHTML = "";
+  }
+
+  function scrollToResults() {
+    const target =
+      resultsSection || results;
+
+    if (!target) {
+      return;
+    }
+
+    setTimeout(() => {
+      target.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }, 100);
+  }
+
+  /* =========================================================
+     RESULT CARD
+     ========================================================= */
+
+  function createMediaElement(item) {
+    const frame =
+      document.createElement("div");
+
+    frame.className =
+      "instadrop-media-frame";
+
+    if (item.type === "video") {
+      const video =
+        document.createElement("video");
+
+      video.className =
+        "instadrop-media";
+
+      video.controls = true;
+      video.preload = "metadata";
+      video.playsInline = true;
+
+      if (item.thumbnail) {
+        video.poster =
+          item.thumbnail;
+      }
+
+      video.src = item.url;
+
+      frame.appendChild(video);
+
+      return frame;
+    }
+
+    const image =
+      document.createElement("img");
+
+    image.className =
+      "instadrop-media";
+
+    image.loading = "lazy";
+    image.alt =
+      item.title || "Instagram media";
+
+    image.src = item.url;
+
+    frame.appendChild(image);
+
+    return frame;
+  }
+
+  function createResultCard(
+    item,
+    index
+  ) {
+    const card =
+      document.createElement("article");
+
+    card.className =
+      "instadrop-result-card";
+
+    card.dataset.index =
+      String(index);
+
+    const media =
+      createMediaElement(item);
+
+    card.appendChild(media);
+
+    const body =
+      document.createElement("div");
+
+    body.className =
+      "instadrop-result-body";
+
+    if (item.title) {
+      const title =
+        document.createElement("div");
+
+      title.className =
+        "instadrop-result-title";
+
+      title.textContent =
+        item.title;
+
+      body.appendChild(title);
+    }
+
+    if (item.duration) {
+      const duration =
+        document.createElement("span");
+
+      duration.className =
+        "instadrop-duration";
+
+      duration.textContent =
+        fmtDuration(item.duration);
+
+      body.appendChild(duration);
+    }
+
+    const actions =
+      document.createElement("div");
+
+    actions.className =
+      "instadrop-result-actions";
+
+    const download =
+      document.createElement("button");
+
+    download.type = "button";
+    download.className =
+      "download-media-btn";
+
+    download.textContent =
+      item.type === "video"
+        ? "Download Video"
+        : "Download Image";
+
+    download.addEventListener(
+      "click",
+      async () => {
+        const originalText =
+          download.textContent;
+
+        try {
+          download.disabled = true;
+          download.textContent =
+            "Downloading...";
+
+          const blob =
+            await fetchBlob(item.url);
+
+          const extension =
+            getFileExtension(
+              item,
+              blob
+            );
+
+          const filename =
+            `instadrop_${index + 1}.${extension}`;
+
+          await triggerSave(
+            blob,
+            filename
+          );
+
+          download.textContent =
+            "Downloaded ✓";
+
+          setTimeout(() => {
+            download.textContent =
+              originalText;
+            download.disabled = false;
+          }, 1500);
+        } catch (error) {
+          download.disabled = false;
+          download.textContent =
+            originalText;
+
+          showError(
+            error?.message ||
+            "Could not download this media."
+          );
+        }
+      }
+    );
+
+    actions.appendChild(download);
+
+    /*
+     * MP3 button is intentionally omitted.
+     * No external FFmpeg/CDN is loaded.
+     */
+
+    body.appendChild(actions);
+    card.appendChild(body);
+
+    return card;
+  }
+
+  function renderItems(
+    data,
+    opts = {},
+    inputUrl = ""
+  ) {
+    clearResults();
+
+    if (!results) {
+      return;
+    }
+
+    const items =
+      Array.isArray(data)
+        ? data
+        : [];
+
+    if (!items.length) {
+      showError(
+        "No downloadable media found."
+      );
+
+      return;
+    }
+
+    const wrapper =
+      document.createElement("div");
+
+    wrapper.className =
+      "instadrop-results-grid";
+
+    items.forEach((item, index) => {
+      wrapper.appendChild(
+        createResultCard(
+          item,
+          index
+        )
+      );
+    });
+
+    results.appendChild(wrapper);
+
+    addHistory({
+      url: inputUrl,
+      type: opts.type || "media",
+      count: items.length,
+      timestamp: Date.now()
+    });
+
+    scrollToResults();
+  }
+
+  /* =========================================================
+     PROFILE RESULT
+     ========================================================= */
+
+  function renderProfile(
+    items,
+    username,
+    inputUrl
+  ) {
+    clearResults();
+
+    if (!results) {
+      return;
+    }
+
+    if (!items.length) {
+      showError(
+        "Your API did not return a profile image/media URL."
+      );
+
+      return;
+    }
+
+    /*
+     * Prefer the first image.
+     */
+    const item =
+      items.find(
+        media =>
+          media.type !== "video"
+      ) || items[0];
+
+    const card =
+      document.createElement("article");
+
+    card.className =
+      "instadrop-profile-card";
+
+    const image =
+      document.createElement("img");
+
+    image.className =
+      "instadrop-profile-image";
+
+    image.alt =
+      username
+        ? `@${username}`
+        : "Instagram profile";
+
+    image.src =
+      item.url;
+
+    card.appendChild(image);
+
+    const content =
+      document.createElement("div");
+
+    content.className =
+      "instadrop-profile-content";
+
+    if (username) {
+      const name =
+        document.createElement("h3");
+
+      name.textContent =
+        `@${username}`;
+
+      content.appendChild(name);
+    }
+
+    const button =
+      document.createElement("button");
+
+    button.type = "button";
+    button.className =
+      "download-media-btn";
+
+    button.textContent =
+      "Download Profile Picture";
+
+    button.addEventListener(
+      "click",
+      async () => {
+        const original =
+          button.textContent;
+
+        try {
+          button.disabled = true;
+          button.textContent =
+            "Downloading...";
+
+          const blob =
+            await fetchBlob(
+              item.url
+            );
+
+          const extension =
+            getFileExtension(
+              item,
+              blob
+            );
+
+          await triggerSave(
+            blob,
+            `instadrop_profile.${extension}`
+          );
+
+          button.textContent =
+            "Downloaded ✓";
+
+          setTimeout(() => {
+            button.textContent =
+              original;
+            button.disabled = false;
+          }, 1500);
+        } catch (error) {
+          button.disabled = false;
+          button.textContent =
+            original;
+
+          showError(
+            error?.message ||
+            "Could not download the profile picture."
+          );
+        }
+      }
+    );
+
+    content.appendChild(button);
+    card.appendChild(content);
+
+    results.appendChild(card);
+
+    addHistory({
+      url: inputUrl,
+      type: "profile",
+      count: 1,
+      timestamp: Date.now()
+    });
+
+    scrollToResults();
+  }
+
+  /* =========================================================
+     MAIN DOWNLOAD
+     ========================================================= */
+
+  async function startDownload() {
+    if (!input) {
+      return;
+    }
+
+    clearError();
+
+    const value =
+      input.value.trim();
+
+    if (!value) {
+      showError(
+        "Paste an Instagram link first."
+      );
+
+      input.focus();
+      return;
+    }
+
+    const parsed =
+      parseInput(value);
+
+    if (
+      parsed.type === "invalid"
+    ) {
+      showError(
+        "Please enter a valid Instagram URL."
+      );
+
+      return;
+    }
+
+    setBusy(true);
+
+    try {
+      clearResults();
+
+      /*
+       * IMPORTANT:
+       *
+       * Every Instagram request goes through:
+       *
+       * https://instadrop.rishu-rishad2019.workers.dev/?url=
+       */
+
+      const response =
+        await callInstagramApi(
+          parsed.url
+        );
+
+      const items =
+        normalizeApiResponse(
+          response
+        );
+
+      if (!items.length) {
+        throw new Error(
+          "Your API responded successfully, but no downloadable media URL was found."
         );
       }
 
-      scrollToResults();
-    } catch (e) {
+      if (
+        parsed.type === "profile"
+      ) {
+        renderProfile(
+          items,
+          parsed.username || "",
+          parsed.url
+        );
+      } else {
+        renderItems(
+          items,
+          {
+            type: parsed.type
+          },
+          parsed.url
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Instadrop API error:",
+        error
+      );
+
       showError(
-        e && e.message
-          ? e.message
-          : String(e)
+        error?.message ||
+        "Something went wrong while processing the Instagram link."
       );
     } finally {
       setBusy(false);
     }
   }
-);
 
-/* ============================================================
-   SERVICE WORKER
-   ============================================================ */
+  /* =========================================================
+     HISTORY
+     ========================================================= */
 
-document.addEventListener(
-  "DOMContentLoaded",
-  () => {
+  function getHistory() {
+    try {
+      const raw =
+        localStorage.getItem(
+          HISTORY_KEY
+        );
+
+      if (!raw) {
+        return [];
+      }
+
+      const parsed =
+        JSON.parse(raw);
+
+      return Array.isArray(parsed)
+        ? parsed
+        : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveHistory(history) {
+    try {
+      localStorage.setItem(
+        HISTORY_KEY,
+        JSON.stringify(
+          history.slice(
+            0,
+            MAX_HISTORY
+          )
+        )
+      );
+    } catch (_) {
+      // Ignore storage errors.
+    }
+  }
+
+  function addHistory(entry) {
+    if (!entry?.url) {
+      return;
+    }
+
+    const history =
+      getHistory();
+
+    const filtered =
+      history.filter(
+        item =>
+          item &&
+          item.url !== entry.url
+      );
+
+    filtered.unshift(entry);
+
+    saveHistory(filtered);
+
+    renderHistory();
+  }
+
+  function clearHistory() {
+    try {
+      localStorage.removeItem(
+        HISTORY_KEY
+      );
+    } catch (_) {}
+
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const container =
+      $(
+        "#history, .history-list, [data-history]"
+      );
+
+    if (!container) {
+      return;
+    }
+
+    const history =
+      getHistory();
+
+    container.innerHTML = "";
+
+    if (!history.length) {
+      container.innerHTML =
+        `<div class="history-empty">
+          No recent downloads.
+        </div>`;
+
+      return;
+    }
+
+    history.forEach(item => {
+      const row =
+        document.createElement("div");
+
+      row.className =
+        "history-item";
+
+      const text =
+        document.createElement("div");
+
+      text.className =
+        "history-item-text";
+
+      let displayUrl =
+        item.url;
+
+      try {
+        const parsed =
+          new URL(item.url);
+
+        displayUrl =
+          parsed.pathname || item.url;
+      } catch (_) {}
+
+      text.textContent =
+        displayUrl;
+
+      const button =
+        document.createElement("button");
+
+      button.type = "button";
+      button.className =
+        "history-use-btn";
+
+      button.textContent =
+        "Use";
+
+      button.addEventListener(
+        "click",
+        () => {
+          if (input) {
+            input.value =
+              item.url;
+
+            input.focus();
+
+            window.scrollTo({
+              top: 0,
+              behavior: "smooth"
+            });
+          }
+        }
+      );
+
+      row.appendChild(text);
+      row.appendChild(button);
+
+      container.appendChild(row);
+    });
+
+    const clear =
+      $(
+        "#clearHistory, .clear-history, [data-clear-history]"
+      );
+
+    if (clear) {
+      clear.onclick =
+        clearHistory;
+    }
+  }
+
+  /* =========================================================
+     PASTE
+     ========================================================= */
+
+  async function pasteFromClipboard() {
+    if (!input) {
+      return;
+    }
+
+    clearError();
+
+    try {
+      if (
+        !navigator.clipboard ||
+        !navigator.clipboard.readText
+      ) {
+        throw new Error(
+          "Clipboard access is not available."
+        );
+      }
+
+      const text =
+        await navigator.clipboard.readText();
+
+      if (!text) {
+        showError(
+          "Clipboard is empty."
+        );
+
+        return;
+      }
+
+      input.value =
+        text.trim();
+
+      input.dispatchEvent(
+        new Event(
+          "input",
+          {
+            bubbles: true
+          }
+        )
+      );
+
+      input.focus();
+    } catch (error) {
+      showError(
+        "Unable to read your clipboard. Please paste the link manually."
+      );
+    }
+  }
+
+  /* =========================================================
+     COPY API URL
+     ========================================================= */
+
+  function copyApiTemplate() {
+    const text =
+      INSTADROP_API;
+
     if (
-      "serviceWorker" in
-        navigator &&
-      location.protocol.indexOf(
-        "http"
-      ) === 0 &&
-      location.hostname.indexOf(
-        "perchance"
-      ) === -1
+      navigator.clipboard &&
+      navigator.clipboard.writeText
     ) {
-      navigator.serviceWorker
-        .register("sw.js")
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          showTemporaryMessage(
+            "API URL copied."
+          );
+        })
         .catch(() => {});
     }
   }
-);
 
-/* ============================================================
-   ENTER KEY
-   ============================================================ */
+  function showTemporaryMessage(
+    message
+  ) {
+    const existing =
+      $(
+        ".instadrop-temp-message"
+      );
 
-urlInput.addEventListener(
-  "keydown",
-  (e) => {
-    if (e.key === "Enter") {
-      downloadBtn.click();
+    if (existing) {
+      existing.remove();
+    }
+
+    const box =
+      document.createElement("div");
+
+    box.className =
+      "instadrop-temp-message";
+
+    box.textContent =
+      message;
+
+    document.body.appendChild(box);
+
+    setTimeout(() => {
+      box.remove();
+    }, 1800);
+  }
+
+  /* =========================================================
+     THEME
+     ========================================================= */
+
+  function applyTheme(theme) {
+    const root =
+      document.documentElement;
+
+    if (theme === "system") {
+      root.removeAttribute(
+        "data-theme"
+      );
+      return;
+    }
+
+    root.setAttribute(
+      "data-theme",
+      theme
+    );
+  }
+
+  function getStoredTheme() {
+    try {
+      return (
+        localStorage.getItem(
+          THEME_KEY
+        ) || "system"
+      );
+    } catch (_) {
+      return "system";
     }
   }
-);
+
+  function setTheme(theme) {
+    const valid =
+      [
+        "light",
+        "dark",
+        "system"
+      ].includes(theme)
+        ? theme
+        : "system";
+
+    applyTheme(valid);
+
+    try {
+      localStorage.setItem(
+        THEME_KEY,
+        valid
+      );
+    } catch (_) {}
+
+    updateThemeControls(valid);
+  }
+
+  function updateThemeControls(
+    theme
+  ) {
+    $$(
+      "[data-theme], [data-set-theme]"
+    ).forEach(button => {
+      const value =
+        button.dataset.theme ||
+        button.dataset.setTheme;
+
+      button.classList.toggle(
+        "active",
+        value === theme
+      );
+
+      if (value === theme) {
+        button.setAttribute(
+          "aria-pressed",
+          "true"
+        );
+      } else {
+        button.setAttribute(
+          "aria-pressed",
+          "false"
+        );
+      }
+    });
+  }
+
+  function setupTheme() {
+    const theme =
+      getStoredTheme();
+
+    applyTheme(theme);
+    updateThemeControls(theme);
+
+    $$(
+      "[data-set-theme], [data-theme]"
+    ).forEach(button => {
+      const value =
+        button.dataset.setTheme ||
+        button.dataset.theme;
+
+      if (
+        ![
+          "light",
+          "dark",
+          "system"
+        ].includes(value)
+      ) {
+        return;
+      }
+
+      button.addEventListener(
+        "click",
+        () => {
+          setTheme(value);
+        }
+      );
+    });
+
+    /*
+     * Optional single theme toggle.
+     */
+    const toggle =
+      $(
+        "#themeToggle, .theme-toggle"
+      );
+
+    if (toggle) {
+      toggle.addEventListener(
+        "click",
+        () => {
+          const current =
+            getStoredTheme();
+
+          setTheme(
+            current === "dark"
+              ? "light"
+              : "dark"
+          );
+        }
+      );
+    }
+  }
+
+  /* =========================================================
+     MOBILE MENU
+     ========================================================= */
+
+  function setupMobileMenu() {
+    const menuButton =
+      $(
+        "#menuToggle, #hamburger, .menu-toggle"
+      );
+
+    const menu =
+      $(
+        "#mobileMenu, .mobile-menu"
+      );
+
+    const overlay =
+      $(
+        "#menuOverlay, .menu-overlay"
+      );
+
+    if (!menuButton || !menu) {
+      return;
+    }
+
+    function closeMenu() {
+      menu.classList.remove(
+        "open",
+        "active"
+      );
+
+      if (overlay) {
+        overlay.classList.remove(
+          "open",
+          "active"
+        );
+      }
+
+      menuButton.setAttribute(
+        "aria-expanded",
+        "false"
+      );
+    }
+
+    function openMenu() {
+      menu.classList.add(
+        "open",
+        "active"
+      );
+
+      if (overlay) {
+        overlay.classList.add(
+          "open",
+          "active"
+        );
+      }
+
+      menuButton.setAttribute(
+        "aria-expanded",
+        "true"
+      );
+    }
+
+    menuButton.addEventListener(
+      "click",
+      () => {
+        if (
+          menu.classList.contains(
+            "open"
+          ) ||
+          menu.classList.contains(
+            "active"
+          )
+        ) {
+          closeMenu();
+        } else {
+          openMenu();
+        }
+      }
+    );
+
+    if (overlay) {
+      overlay.addEventListener(
+        "click",
+        closeMenu
+      );
+    }
+
+    $$(
+      "a",
+      menu
+    ).forEach(link => {
+      link.addEventListener(
+        "click",
+        closeMenu
+      );
+    });
+  }
+
+  /* =========================================================
+     NAVIGATION
+     ========================================================= */
+
+  function setupNavigation() {
+    const header =
+      $(
+        "header, .site-header, [data-header]"
+      );
+
+    function updateHeader() {
+      if (!header) {
+        return;
+      }
+
+      header.classList.toggle(
+        "scrolled",
+        window.scrollY > 10
+      );
+    }
+
+    window.addEventListener(
+      "scroll",
+      updateHeader,
+      {
+        passive: true
+      }
+    );
+
+    updateHeader();
+
+    const sections = [
+      "downloader",
+      "features",
+      "how",
+      "faq"
+    ];
+
+    const navLinks =
+      sections
+        .map(id => ({
+          id,
+          link: $(
+            `[href="#${id}"]`
+          )
+        }))
+        .filter(item => item.link);
+
+    if (!("IntersectionObserver" in window)) {
+      return;
+    }
+
+    const observer =
+      new IntersectionObserver(
+        entries => {
+          entries.forEach(
+            entry => {
+              if (!entry.isIntersecting) {
+                return;
+              }
+
+              navLinks.forEach(
+                item => {
+                  item.link.classList.toggle(
+                    "active",
+                    item.id ===
+                      entry.target.id
+                  );
+                }
+              );
+            }
+          );
+        },
+        {
+          rootMargin:
+            "-25% 0px -60% 0px",
+          threshold: 0
+        }
+      );
+
+    navLinks.forEach(
+      ({ id }) => {
+        const section =
+          document.getElementById(id);
+
+        if (section) {
+          observer.observe(section);
+        }
+      }
+    );
+  }
+
+  /* =========================================================
+     FAQ
+     ========================================================= */
+
+  function setupFaq() {
+    const faqItems =
+      $$(
+        ".faq-item, [data-faq]"
+      );
+
+    faqItems.forEach(item => {
+      const question =
+        $(
+          ".faq-question, summary, [data-faq-question]",
+          item
+        );
+
+      if (!question) {
+        return;
+      }
+
+      question.addEventListener(
+        "click",
+        () => {
+          faqItems.forEach(
+            other => {
+              if (other !== item) {
+                other.classList.remove(
+                  "open",
+                  "active"
+                );
+              }
+            }
+          );
+
+          item.classList.toggle(
+            "open"
+          );
+
+          item.classList.toggle(
+            "active"
+          );
+        }
+      );
+    });
+  }
+
+  /* =========================================================
+     SCROLL REVEAL
+     ========================================================= */
+
+  function setupReveal() {
+    const elements =
+      $$(
+        ".reveal, .fade-up, [data-reveal]"
+      );
+
+    if (!elements.length) {
+      return;
+    }
+
+    if (
+      !("IntersectionObserver" in window)
+    ) {
+      elements.forEach(
+        element => {
+          element.classList.add(
+            "visible",
+            "show",
+            "active"
+          );
+        }
+      );
+
+      return;
+    }
+
+    const observer =
+      new IntersectionObserver(
+        entries => {
+          entries.forEach(
+            entry => {
+              if (
+                entry.isIntersecting
+              ) {
+                entry.target.classList.add(
+                  "visible",
+                  "show",
+                  "active"
+                );
+
+                observer.unobserve(
+                  entry.target
+                );
+              }
+            }
+          );
+        },
+        {
+          threshold: 0.08
+        }
+      );
+
+    elements.forEach(
+      element => {
+        observer.observe(element);
+      }
+    );
+  }
+
+  /* =========================================================
+     DEMO / QUICK LINKS
+     ========================================================= */
+
+  function setupQuickLinks() {
+    $$(
+      "[data-url], [data-demo-url], .demo-chip"
+    ).forEach(element => {
+      element.addEventListener(
+        "click",
+        () => {
+          const value =
+            element.dataset.url ||
+            element.dataset.demoUrl ||
+            element.getAttribute(
+              "data-value"
+            );
+
+          if (
+            !value ||
+            !input
+          ) {
+            return;
+          }
+
+          input.value =
+            value;
+
+          input.dispatchEvent(
+            new Event(
+              "input",
+              {
+                bubbles: true
+              }
+            )
+          );
+
+          input.focus();
+
+          if (
+            element.dataset.autodownload ===
+            "true"
+          ) {
+            startDownload();
+          }
+        }
+      );
+    });
+  }
+
+  /* =========================================================
+     URL PREFILL
+     ========================================================= */
+
+  function setupUrlPrefill() {
+    try {
+      const params =
+        new URLSearchParams(
+          window.location.search
+        );
+
+      const url =
+        params.get("url");
+
+      if (
+        url &&
+        input
+      ) {
+        input.value =
+          url;
+      }
+    } catch (_) {}
+  }
+
+  /* =========================================================
+     KEYBOARD
+     ========================================================= */
+
+  function setupKeyboard() {
+    if (!input) {
+      return;
+    }
+
+    input.addEventListener(
+      "keydown",
+      event => {
+        if (
+          event.key === "Enter" &&
+          !event.shiftKey
+        ) {
+          event.preventDefault();
+
+          if (
+            downloadBtn &&
+            !downloadBtn.disabled
+          ) {
+            startDownload();
+          }
+        }
+      }
+    );
+  }
+
+  /* =========================================================
+     BUTTONS
+     ========================================================= */
+
+  function setupButtons() {
+    if (downloadBtn) {
+      downloadBtn.addEventListener(
+        "click",
+        startDownload
+      );
+    }
+
+    if (pasteBtn) {
+      pasteBtn.addEventListener(
+        "click",
+        pasteFromClipboard
+      );
+    }
+
+    const copyApi =
+      $(
+        "#copyApi, [data-copy-api]"
+      );
+
+    if (copyApi) {
+      copyApi.addEventListener(
+        "click",
+        copyApiTemplate
+      );
+    }
+
+    const clearHistoryButton =
+      $(
+        "#clearHistory, .clear-history, [data-clear-history]"
+      );
+
+    if (clearHistoryButton) {
+      clearHistoryButton.addEventListener(
+        "click",
+        clearHistory
+      );
+    }
+  }
+
+  /* =========================================================
+     SERVICE WORKER
+     ========================================================= */
+
+  function setupServiceWorker() {
+    /*
+     * sw.js is local to your website.
+     * It is NOT an external API.
+     */
+
+    if (
+      !("serviceWorker" in navigator)
+    ) {
+      return;
+    }
+
+    if (
+      location.protocol !== "http:" &&
+      location.protocol !== "https:"
+    ) {
+      return;
+    }
+
+    /*
+     * Keep this disabled on Perchance pages.
+     */
+    if (
+      location.hostname.includes(
+        "perchance.org"
+      ) ||
+      location.hostname.includes(
+        "perchance"
+      )
+    ) {
+      return;
+    }
+
+    window.addEventListener(
+      "load",
+      () => {
+        navigator.serviceWorker
+          .register("./sw.js")
+          .catch(() => {});
+      }
+    );
+  }
+
+  /* =========================================================
+     INITIALIZATION
+     ========================================================= */
+
+  function init() {
+    setupTheme();
+    setupMobileMenu();
+    setupNavigation();
+    setupFaq();
+    setupReveal();
+    setupQuickLinks();
+    setupUrlPrefill();
+    setupKeyboard();
+    setupButtons();
+    setupServiceWorker();
+
+    renderHistory();
+
+    /*
+     * Make sure spinner starts hidden.
+     */
+    if (spinner) {
+      spinner.hidden = true;
+      spinner.style.display =
+        "none";
+    }
+
+    if (errorBox) {
+      errorBox.hidden = true;
+      errorBox.style.display =
+        "none";
+    }
+  }
+
+  if (
+    document.readyState ===
+    "loading"
+  ) {
+    document.addEventListener(
+      "DOMContentLoaded",
+      init,
+      {
+        once: true
+      }
+    );
+  } else {
+    init();
+  }
+
+  /* =========================================================
+     OPTIONAL GLOBAL API
+     ========================================================= */
+
+  /*
+   * Useful if your HTML or other scripts want to call
+   * Instadrop manually.
+   */
+
+  window.InstaDrop = {
+    api: INSTADROP_API,
+    parseInput,
+    callInstagramApi,
+    fetchMedia,
+    fetchStoryMedia,
+    normalizeApiResponse,
+    startDownload,
+    clearHistory,
+    getHistory
+  };
+
+})();
