@@ -656,6 +656,7 @@ async function renderItems(data, opts, input) {
 async function renderDp(username, input) {
   const profile = await fetchProfile(username);
   const pic = (Array.isArray(profile.image) && profile.image[0]) || profile.profile_pic_url_hd || profile.profile_pic_url;
+  if (!pic) throw new Error("Couldn't find a profile picture for @" + username + ".");
 
   const who = document.createElement("span");
   who.className = "who";
@@ -721,35 +722,58 @@ async function renderDp(username, input) {
   box.appendChild(row);
   card.appendChild(box);
 
+  /* Instagram serves profile pics with `Cross-Origin-Resource-Policy: same-origin`,
+     so browsers block direct cross-origin <img> loads (that's the
+     ERR_BLOCKED_BY_RESPONSE.NotSameOrigin error, and why the preview was blank,
+     the size showed "?×?", and the button fell back to opening a new tab).
+     Fix: pull the pic through the same proxy used for every other media type,
+     then show it as a same-origin blob URL so preview, resolution and the
+     direct download all work. If the proxy can't reach it, fall back to the
+     old behaviour (open in a new tab — top-level navigation isn't blocked). */
+  let blob = null;
+  let blobUrl = null;
+  try {
+    blob = await fetchBlob(pic, 1);
+    blobUrl = URL.createObjectURL(blob);
+  } catch (e) {
+    blobUrl = null;
+  }
+
   frame.innerHTML = "";
   const im = document.createElement("img");
-  im.src = pic;
+  im.src = blobUrl || pic;
   im.alt = "@" + username + " profile picture";
   frame.appendChild(im);
   const badge = document.createElement("span");
   badge.className = "media-badge";
   badge.textContent = "…";
   frame.appendChild(badge);
-  const dims = await new Promise((res) => {
-    const probe = new Image();
-    probe.onload = () => res({ w: probe.naturalWidth, h: probe.naturalHeight });
-    probe.onerror = () => res(null);
-    probe.src = pic;
-  });
-  const nw = dims ? dims.w : "?";
-  const nh = dims ? dims.h : "?";
+
+  let nw = "?", nh = "?";
+  let dims = null;
+  if (blobUrl) {
+    dims = await new Promise((res) => {
+      const probe = new Image();
+      probe.onload = () => res({ w: probe.naturalWidth, h: probe.naturalHeight });
+      probe.onerror = () => res(null);
+      probe.src = blobUrl;
+    });
+    if (dims) { nw = dims.w; nh = dims.h; }
+  }
   badge.textContent = nw + "×" + nh + (dims ? " · original" : "");
+
   btn.disabled = false;
-  btn.textContent = "Download profile pic (" + nw + "×" + nh + ")";
-  btn.onclick = async () => {
-    try {
-      const blob = await withTimeout(fetchBlob(pic, 1), 25000, "Download timed out.");
-      triggerSave(blob, username + "_profile_pic_" + nw + "x" + nh + ".jpg");
-    } catch (e) {
-      window.open(pic, "_blank");
-      showError("Your browser blocked direct download. Opened picture in new tab — right click and save image.");
-    }
-  };
+  if (blob) {
+    btn.textContent = "Download profile pic (" + nw + "×" + nh + ")";
+    btn.onclick = () => triggerSave(blob, username + "_profile_pic_" + nw + "x" + nh + ".jpg");
+  } else {
+    const note = document.createElement("div");
+    note.className = "frame-hint";
+    note.textContent = "Preview blocked by Instagram. Use the button below to open the picture.";
+    frame.appendChild(note);
+    btn.textContent = "Open profile pic";
+    btn.onclick = () => window.open(pic, "_blank");
+  }
   addHistory({ kind: "dp", label: "@" + username, input });
 }
 
