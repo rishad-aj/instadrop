@@ -3,11 +3,8 @@
    Standalone application logic.
    ============================================================ */
 
-/* Network helper: uses Perchance's superFetch proxy when available,
-   otherwise falls back to the browser's native fetch. */
-const fetchLike = (typeof window.root !== 'undefined' && window.root && window.root.superFetch)
-  ? window.root.superFetch.bind(window.root)
-  : window.fetch.bind(window);
+/* Network helper: plain browser fetch. */
+const fetchLike = window.fetch.bind(window);
 
 /* ---------- single API (your Cloudflare Worker) ----------
    Handles: reels, posts, carousels, stories, highlights, profile pics.
@@ -726,10 +723,11 @@ async function renderDp(username, input) {
      so browsers block direct cross-origin <img> loads (that's the
      ERR_BLOCKED_BY_RESPONSE.NotSameOrigin error, and why the preview was blank,
      the size showed "?×?", and the button fell back to opening a new tab).
-     Fix: pull the pic through the same proxy used for every other media type,
-     then show it as a same-origin blob URL so preview, resolution and the
-     direct download all work. If the proxy can't reach it, fall back to the
-     old behaviour (open in a new tab — top-level navigation isn't blocked). */
+     Fix: fetch the pic as a blob first, then show it as a same-origin blob URL
+     so preview, resolution and a direct download all work when the fetch
+     succeeds. If the browser can't fetch it cross-origin (Instagram blocks it),
+     fall back to opening the picture in a new tab — top-level navigation isn't
+     blocked by CORP. */
   let blob = null;
   let blobUrl = null;
   try {
