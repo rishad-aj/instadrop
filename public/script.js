@@ -534,6 +534,34 @@ function wrapResult(htmlEl) {
   return card;
 }
 
+/* Profile pics are fetched through a chain of CORS-friendly proxies.
+   Instagram serves profile pics (scontent.cdninstagram.com) with
+   `Cross-Origin-Resource-Policy: same-origin` and no CORS headers, so the
+   browser blocks BOTH the cross-origin <img> preview (the blank box /
+   ERR_BLOCKED_BY_RESPONSE.NotSameOrigin, and why the size showed "?x?")
+   AND any direct fetch() of the bytes. Each proxy below fetches the image
+   server-side and re-serves it with permissive CORS headers, so the bytes
+   come back fine. `direct` is tried first in case a CDN host allows it. */
+const PIC_PROXIES = [
+  { name: "direct",     build: (u) => u },
+  { name: "allorigins", build: (u) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u) },
+  { name: "wsrv",       build: (u) => "https://images.weserv.nl/?url=" + encodeURIComponent(u.replace(/^https?:\/\//, "")) },
+];
+
+async function fetchProfilePicBytes(url) {
+  for (const proxy of PIC_PROXIES) {
+    try {
+      const res = await withTimeout(fetchLike(proxy.build(url)), 20000, proxy.name + " timed out.");
+      if (!res.ok) continue;
+      const b = await res.blob();
+      if (!b || b.size < 512) continue;
+      if (b.type && !/^image\//.test(b.type)) continue; // skip HTML/JSON error pages
+      return b;
+    } catch (e) { /* try next proxy */ }
+  }
+  return null;
+}
+
 async function renderItems(data, opts, input) {
   const who = document.createElement("span");
   who.className = "who";
@@ -719,23 +747,19 @@ async function renderDp(username, input) {
   box.appendChild(row);
   card.appendChild(box);
 
-  /* Instagram serves profile pics with `Cross-Origin-Resource-Policy: same-origin`,
-     so browsers block direct cross-origin <img> loads (that's the
-     ERR_BLOCKED_BY_RESPONSE.NotSameOrigin error, and why the preview was blank,
-     the size showed "?×?", and the button fell back to opening a new tab).
-     Fix: fetch the pic as a blob first, then show it as a same-origin blob URL
-     so preview, resolution and a direct download all work when the fetch
-     succeeds. If the browser can't fetch it cross-origin (Instagram blocks it),
-     fall back to opening the picture in a new tab — top-level navigation isn't
-     blocked by CORP. */
+  /* Instagram serves profile pics with `Cross-Origin-Resource-Policy:
+     same-origin`, so browsers block direct cross-origin <img> loads (that's
+     the ERR_BLOCKED_BY_RESPONSE.NotSameOrigin error, and why the preview was
+     blank, the size showed "?x?", and the button fell back to opening a new
+     tab). Fix: pull the bytes through the PIC_PROXIES chain (server-side
+     CORS proxies), then show them as a same-origin blob URL so preview,
+     resolution and a direct download all work. If every proxy fails too,
+     fall back to opening the picture in a new tab — top-level navigation
+     isn't blocked by CORP. */
   let blob = null;
   let blobUrl = null;
-  try {
-    blob = await fetchBlob(pic, 1);
-    blobUrl = URL.createObjectURL(blob);
-  } catch (e) {
-    blobUrl = null;
-  }
+  blob = await fetchProfilePicBytes(pic);
+  if (blob) blobUrl = URL.createObjectURL(blob);
 
   frame.innerHTML = "";
   const im = document.createElement("img");
