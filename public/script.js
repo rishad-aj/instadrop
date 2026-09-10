@@ -38,20 +38,30 @@ async function myApi(url) {
 }
 
 /* Convert any API response into a uniform item list:
-   [{ kind:"image", thumb, url }, { kind:"video", thumb, url }] */
+   [{ kind:"image", thumb, url }, { kind:"video", thumb, url }]
+   Each video's cover/poster is kept in `thumb` AND added as its own image
+   item (so a reel's cover shows up in the media list too), unless an image
+   with the same URL is already present. */
 function normalizeApi(j) {
   const items = [];
+  const seen = new Set();
   const add = (image, video) => {
     const imgs = Array.isArray(image) ? image : [];
     for (const u of imgs) {
       const cu = cleanUrl(u);
-      if (/^https?:\/\//.test(cu)) items.push({ kind: "image", thumb: cu, url: cu });
+      if (/^https?:\/\//.test(cu) && !seen.has(cu)) { seen.add(cu); items.push({ kind: "image", thumb: cu, url: cu }); }
     }
     const vids = Array.isArray(video) ? video : [];
     for (const v of vids) {
-      if (v && typeof v === "object" && v.video) {
-        const vu = cleanUrl(v.video);
-        if (/^https?:\/\//.test(vu)) items.push({ kind: "video", thumb: v.cover ? cleanUrl(v.cover) : null, url: vu });
+      if (!v || typeof v !== "object" || !v.video) continue;
+      const vu = cleanUrl(v.video);
+      if (!/^https?:\/\//.test(vu) || seen.has(vu)) continue;
+      seen.add(vu);
+      const cover = v.cover ? cleanUrl(v.cover) : null;
+      items.push({ kind: "video", thumb: cover, url: vu });
+      if (cover && /^https?:\/\//.test(cover) && !seen.has(cover)) {
+        seen.add(cover);
+        items.push({ kind: "image", thumb: cover, url: cover, isCover: true });
       }
     }
   };
@@ -336,6 +346,15 @@ function parseInput(raw) {
   return { kind: "unknown" };
 }
 
+/* Some Instagram CDN hosts serve media with `Cross-Origin-Resource-Policy:
+   same-origin` and no CORS headers, so a direct fetch() of the bytes is
+   blocked. These CORS-friendly proxies re-serve the file server-side and are
+   only tried when the direct fetch (and its retry) both fail. */
+const MEDIA_PROXIES = [
+  { name: "allorigins", build: (u) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u) },
+  { name: "codetabs",   build: (u) => "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(u) },
+];
+
 async function fetchBlob(url, tries = 2) {
   let lastErr;
   for (let i = 0; i < tries; i++) {
@@ -347,6 +366,14 @@ async function fetchBlob(url, tries = 2) {
       lastErr = e;
     }
     if (i < tries - 1) await sleep(2500);
+  }
+  for (const proxy of MEDIA_PROXIES) {
+    try {
+      const res = await withTimeout(fetchLike(proxy.build(url)), 45000, proxy.name + " timed out.");
+      if (!res.ok) continue;
+      const b = await res.blob();
+      if (b && b.size > 0) return b;
+    } catch (e) { lastErr = e; }
   }
   throw lastErr;
 }
@@ -642,7 +669,7 @@ async function renderItems(data, opts, input) {
     const frame = document.createElement("div");
     frame.className = "media-frame";
     const hint = document.createElement("div");
-    hint.className = "frame-hint";
+    hint.className = "frame-hint loading";
     hint.innerHTML = '<div class="spinner"></div><span>Loading preview…</span>';
     frame.appendChild(hint);
     box.appendChild(frame);
@@ -670,29 +697,47 @@ async function renderItems(data, opts, input) {
     card.appendChild(box);
 
     frame.innerHTML = "";
-    if (item.kind === "video") {
-      const v = document.createElement("video");
-      v.controls = true;
-      v.playsInline = true;
-      v.src = item.url;
-      const badge = document.createElement("span");
-      badge.className = "media-badge hidden";
-      v.addEventListener("loadedmetadata", () => {
-        badge.textContent = fmtDuration(v.duration) + " · " + v.videoWidth + "×" + v.videoHeight;
+    const isVideo = item.kind === "video";
+    const media = document.createElement(isVideo ? "video" : "img");
+    media.className = "media-el";
+    media.referrerPolicy = "no-referrer";
+    if (isVideo) {
+      media.controls = true;
+      media.playsInline = true;
+      media.setAttribute("playsinline", "");
+    } else {
+      media.alt = item.isCover ? "Reel cover image" : "Instagram image";
+    }
+
+    const badge = document.createElement("span");
+    badge.className = "media-badge hidden";
+    if (isVideo) {
+      media.addEventListener("loadedmetadata", () => {
+        if (!media.videoWidth) return;
+        badge.textContent = fmtDuration(media.duration) + " · " + media.videoWidth + "×" + media.videoHeight;
         badge.classList.remove("hidden");
       });
-      frame.appendChild(v);
-      frame.appendChild(badge);
     } else {
-      const im = document.createElement("img");
-      im.src = item.url;
-      im.alt = "Instagram image";
-      frame.appendChild(im);
+      badge.textContent = item.isCover ? "Cover" : "Photo";
+      badge.classList.remove("hidden");
     }
+
+    frame.appendChild(media);
+    frame.appendChild(badge);
+    frame.appendChild(hint);
+    const dropHint = () => hint.remove();
+    media.addEventListener(isVideo ? "loadeddata" : "load", dropHint, { once: true });
+
+    if (isVideo && item.thumb) {
+      fetchBlob(item.thumb, 1).then((b) => { media.poster = URL.createObjectURL(b); dropHint(); }).catch(() => {});
+    }
+    media.src = item.url;
 
     fetchBlob(item.url).then(async (blob) => {
       const mb = (blob.size / 1048576).toFixed(1);
-      const bytes = item.kind === "video" ? new Uint8Array(await blob.arrayBuffer()) : null;
+      const bytes = isVideo ? new Uint8Array(await blob.arrayBuffer()) : null;
+      media.src = URL.createObjectURL(blob);
+      dropHint();
       saveBtn.disabled = false;
       saveBtn.textContent = "Download (" + mb + " MB)";
       saveBtn.onclick = () => triggerSave(blob, filename);
