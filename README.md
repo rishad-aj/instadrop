@@ -7,7 +7,10 @@
 <a href="https://instadrop.web.app">
   <img src="public/logo.png" height="72" alt="Instadrop" />
   &nbsp;
-  <img src="public/brand.png" height="72" alt="Instadrop" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://user.uploads.dev/file/33e8a6fc8173e543fbb997b994d3e74c.png" />
+    <img src="public/brand.png" height="72" alt="Instadrop" />
+  </picture>
 </a>
 
 <br/><br/>
@@ -27,7 +30,22 @@
 <img src="https://img.shields.io/badge/FFmpeg.wasm-Audio_%E2%86%92_MP3-007808?style=for-the-badge&logo=ffmpeg&logoColor=white" alt="FFmpeg.wasm" />
 <img src="https://img.shields.io/badge/License-MIT-22C55E?style=for-the-badge&logo=opensourceinitiative&logoColor=white" alt="MIT" />
 
-<br/><br/>
+<br/>
+
+<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Mobile%20Phone.png" width="22" valign="middle" alt="" /> iPhone &amp; Android&nbsp;&nbsp;·&nbsp;&nbsp;<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Desktop%20Computer.png" width="22" valign="middle" alt="" /> Desktop&nbsp;&nbsp;·&nbsp;&nbsp;<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Globe%20with%20Meridians.png" width="22" valign="middle" alt="" /> Any modern browser
+
+<p>
+  <a href="#about">About</a> &nbsp;·&nbsp;
+  <a href="#features">Features</a> &nbsp;·&nbsp;
+  <a href="#how-to-use">How to use</a> &nbsp;·&nbsp;
+  <a href="#tech-stack">Tech stack</a> &nbsp;·&nbsp;
+  <a href="#project-structure">Project structure</a> &nbsp;·&nbsp;
+  <a href="#deploy">Deploy</a> &nbsp;·&nbsp;
+  <a href="#telegram-bot">Telegram bot</a> &nbsp;·&nbsp;
+  <a href="#notes">Notes</a>
+</p>
+
+<br/>
 
 <a href="https://instadrop.web.app">
   <img src="https://img.shields.io/badge/▶️_Open_instadrop-2563EB?style=for-the-badge&logo=firefoxbrowser&logoColor=white" alt="Open Instadrop" />
@@ -50,9 +68,9 @@ endpoints and handed straight to you. **No ads, no login, no trackers.**
 
 <div align="center">
 
-| 🌐 Live app | 🧩 Install as app | 📱 Works on |
+| <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Globe%20with%20Meridians.png" width="20" valign="middle" alt="" /> Live app | <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Puzzle%20Piece.png" width="20" valign="middle" alt="" /> Install as app | <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Mobile%20Phone.png" width="20" valign="middle" alt="" /> Works on |
 | :---: | :---: | :---: |
-| [instadrop.web.app](https://instadrop.web.app) | Add to Home Screen (PWA) | Android · iOS · Desktop |
+| [instadrop.web.app](https://instadrop.web.app) | Add to Home Screen (PWA) | iPhone · Android · Desktop |
 
 </div>
 
@@ -66,25 +84,25 @@ endpoints and handed straight to you. **No ads, no login, no trackers.**
 <tr>
 <td width="50%" valign="top">
 
-**<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Video%20Camera.png" width="20" valign="middle" alt="" /> Media you can grab**
+**<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Movie%20Camera.png" width="20" valign="middle" alt="" /> Media you can grab**
 
-- 🎬 **Reels & posts** — single videos and photos at original quality
-- 🖼️ **Carousels** — download every slide of a multi-image post in one go
-- 👤 **Profile pictures** — original size, no login needed
-- 🌟 **Story highlights** — public highlights with a couple of taps
-- 🎵 **Audio → MP3** — extract any reel's soundtrack, converted in the browser
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Video%20Camera.png" width="18" valign="middle" alt="" /> **Reels & posts** — single videos and photos at original quality
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Framed%20Picture.png" width="18" valign="middle" alt="" /> **Carousels** — download every slide of a multi-image post in one go
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/People/Person.png" width="18" valign="middle" alt="" /> **Profile pictures** — original size, no login needed
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Glowing%20Star.png" width="18" valign="middle" alt="" /> **Story highlights** — public highlights with a couple of taps
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Musical%20Note.png" width="18" valign="middle" alt="" /> **Audio → MP3** — extract any reel's soundtrack, converted in the browser
 
 </td>
 <td width="50%" valign="top">
 
 **<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Gear.png" width="20" valign="middle" alt="" /> Built-in comfort**
 
-- 🚫 **No ads, no trackers, no popups, no redirects** — just a download button
-- 🔒 **Private by design** — your links and files never leave your device
-- 📱 **Installable PWA** — works offline once installed
-- 🔗 **App shortcuts** — long-press the icon: reel, profile pic, or MP3
-- 🌓 **Light / Dark / System** themes
-- ⚡ **Fast & dependency-light** — vanilla JavaScript, no framework
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Symbols/Prohibited.png" width="18" valign="middle" alt="" /> **No ads, no trackers, no popups, no redirects** — just a download button
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Locked.png" width="18" valign="middle" alt="" /> **Private by design** — your links and files never leave your device
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Mobile%20Phone.png" width="18" valign="middle" alt="" /> **Installable PWA** — works offline once installed
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Link.png" width="18" valign="middle" alt="" /> **App shortcuts** — long-press the icon: reel, profile pic, or MP3
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Crescent%20Moon.png" width="18" valign="middle" alt="" /> **Light / Dark / System** themes
+- <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/High%20Voltage.png" width="18" valign="middle" alt="" /> **Fast & dependency-light** — vanilla JavaScript, no framework
 
 </td>
 </tr>
@@ -101,7 +119,7 @@ endpoints and handed straight to you. **No ads, no login, no trackers.**
 3. Press **Download** — the media is resolved in seconds.
 4. Preview the result and hit **Save** — or grab the **MP3** of the audio.
 
-> ℹ️ Works with `instagram.com/reel/…`, `instagram.com/name/p/…` and
+> <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Symbols/Information.png" width="16" valign="middle" alt="" /> Works with `instagram.com/reel/…`, `instagram.com/name/p/…` and
 > profile / highlight links. Profile pictures arrive at the size Instagram serves
 > to anonymous visitors.
 
@@ -208,7 +226,7 @@ is untouched.
 
 <br/><br/>
 
-<sub>© Instadrop · MIT License · Made with <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Red%20Heart.png" width="16" valign="middle" alt="love" /></sub>
+<sub>© Instadrop · MIT License · Made with <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Red%20Heart.png" width="16" valign="middle" alt="" /> for iPhone, Android &amp; the web</sub>
 
 <img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:2563EB,50:3B82F6,100:93C5FD&height=120&section=footer" alt="" />
 
