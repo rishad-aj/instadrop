@@ -506,6 +506,36 @@ function metaBar(rowEl) {
   return meta;
 }
 
+const COPY_ICON = '<svg class="ic-copy" viewBox="0 0 16 16" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>';
+const CHECK_ICON = '<svg class="ic-check" viewBox="0 0 16 16" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M13.485 1.431a1.473 1.473 0 0 1 2.104 2.062l-7.84 9.801a1.473 1.473 0 0 1-2.12.04L.431 8.138a1.473 1.473 0 0 1 2.084-2.083l4.111 4.112 6.82-8.69a.486.486 0 0 1 .039-.046z"/></svg>';
+
+async function copyText(text) {
+  const value = String(text == null ? "" : text);
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+  } catch (e) { /* fall through to the legacy path below */ }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = value;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.top = "-1000px";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, value.length);
+    const ok = document.execCommand("copy");
+    ta.remove();
+    return ok;
+  } catch (e) {
+    return false;
+  }
+}
+
 function addMetaExtra(metaEl, data) {
   if (!data || !data.meta) return;
   const bits = [];
@@ -520,9 +550,34 @@ function addMetaExtra(metaEl, data) {
     metaEl.querySelector(".row").appendChild(stats);
   }
   if (data.meta.caption) {
+    const full = String(data.meta.caption);
     const cap = document.createElement("div");
     cap.className = "meta-extra caption";
-    cap.textContent = data.meta.caption.length > 220 ? data.meta.caption.slice(0, 220) + "…" : data.meta.caption;
+
+    const text = document.createElement("span");
+    text.className = "caption-text";
+    text.textContent = full.length > 220 ? full.slice(0, 220) + "…" : full;
+
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "copy-btn";
+    copyBtn.title = "Copy caption";
+    copyBtn.setAttribute("aria-label", "Copy caption to clipboard");
+    copyBtn.innerHTML = COPY_ICON + CHECK_ICON + '<span class="copy-label">Copy</span>';
+    copyBtn.addEventListener("click", async () => {
+      const ok = await copyText(full);
+      const label = copyBtn.querySelector(".copy-label");
+      clearTimeout(copyBtn._resetTimer);
+      copyBtn.classList.toggle("copied", ok);
+      label.textContent = ok ? "Copied" : "Copy failed";
+      copyBtn._resetTimer = setTimeout(() => {
+        copyBtn.classList.remove("copied");
+        label.textContent = "Copy";
+      }, 2000);
+    });
+
+    cap.appendChild(text);
+    cap.appendChild(copyBtn);
     metaEl.appendChild(cap);
   }
 }

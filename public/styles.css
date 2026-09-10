@@ -1546,6 +1546,52 @@ details.accordion.faq-item {
   border: 1px solid rgb(var(--gray-6)); padding: 5px 11px; border-radius: .5rem; cursor: pointer; background: transparent;
 }
 .meta .open:hover { border-color: rgb(var(--primary)); }
+.meta-extra.caption {
+  flex-basis: 100%;
+  width: 100%;
+  margin-top: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgb(var(--gray-1));
+  border: 1px solid rgb(var(--gray-6));
+  border-radius: .6rem;
+  text-align: left;
+}
+.meta-extra.caption .caption-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgb(var(--content2));
+  overflow-wrap: anywhere;
+}
+button.copy-btn, .copy-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: rgb(var(--primary));
+  background: transparent;
+  border: 1px solid rgb(var(--gray-6));
+  border-radius: .5rem;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s, transform .1s;
+}
+.copy-btn svg { width: 13px; height: 13px; }
+button.copy-btn:hover, .copy-btn:hover { border-color: rgb(var(--primary)); background: rgb(var(--gray-4)); }
+.copy-btn:active { transform: scale(.96); }
+.copy-btn:focus-visible { outline: 2px solid rgb(var(--primary)); outline-offset: 2px; }
+.copy-btn .ic-check { display: none; }
+.copy-btn.copied { color: rgb(var(--success)); border-color: rgb(var(--success)); }
+.copy-btn.copied .ic-copy { display: none; }
+.copy-btn.copied .ic-check { display: inline; }
 .item { margin-top: 14px; }
 .item .media-frame {
   width: 100%; min-height: 280px;
