@@ -309,20 +309,6 @@ function prefillFromQuery() {
 }
 prefillFromQuery();
 
-const copyShortcutUrlBtn = document.getElementById("copyShortcutUrlBtn");
-if (copyShortcutUrlBtn) {
-  copyShortcutUrlBtn.addEventListener("click", async () => {
-    const codeEl = document.getElementById("shortcutUrlCode");
-    try {
-      await navigator.clipboard.writeText(codeEl ? codeEl.textContent : "https://instadrop.web.app/?url=");
-      copyShortcutUrlBtn.textContent = "Copied ✓";
-      setTimeout(() => { copyShortcutUrlBtn.textContent = "Copy URL template"; }, 2500);
-    } catch (e) {
-      showError("Couldn't copy — long-press the URL above instead.");
-    }
-  });
-}
-
 for (const faq of document.querySelectorAll("details.accordion")) {
   faq.addEventListener("toggle", () => faq.classList.toggle("accordion-open", faq.open));
 }

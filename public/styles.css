@@ -1509,12 +1509,6 @@ html[data-theme="dark"] .theme-dd .i-moon { display: none; }
 }
 .step-card h3 { font-size: 20px; font-weight: 600; margin: 12px 0 8px; letter-spacing: -.01em; }
 .step-card p { font-size: 14px; color: rgb(var(--content2)); margin: 0; line-height: 1.65; }
-.step-card .shortcut-url {
-  display: inline-block; max-width: 100%; margin: 6px 0 2px; padding: 6px 10px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px;
-  background: rgb(var(--gray-1)); border: 1px dashed rgb(var(--gray-6)); border-radius: 8px;
-  color: rgb(var(--content1)); word-break: break-all; user-select: all;
-}
 .step-card .btn { margin-top: 10px; }
 
 /* FAQ */
