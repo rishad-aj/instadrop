@@ -647,7 +647,9 @@ async function fetchProfilePicBytes(url) {
 async function renderItems(data, opts, input) {
   const who = document.createElement("span");
   who.className = "who";
-  who.textContent = opts.label || (data.items.length > 1 ? data.items.length + " media items" : "1 media item");
+  const baseLabel = opts.label || (data.items.length > 1 ? data.items.length + " media items" : "1 media item");
+  const coverCount = data.items.filter((it) => it.isCover).length;
+  who.textContent = baseLabel + (coverCount ? " · includes cover image" + (coverCount > 1 ? "s" : "") : "");
   const open = document.createElement("a");
   open.className = "open";
   open.href = opts.openUrl;
@@ -663,6 +665,10 @@ async function renderItems(data, opts, input) {
   data.items.forEach((item, i) => {
     const box = document.createElement("div");
     box.className = "item";
+    const itemLabel = document.createElement("div");
+    itemLabel.className = "item-label";
+    itemLabel.textContent = item.kind === "video" ? "Video" : (item.isCover ? "Cover image" : "Image");
+    box.appendChild(itemLabel);
     const ext = item.kind === "video" ? "mp4" : "jpg";
     const filename = opts.filePrefix + (data.items.length > 1 ? "_" + (i + 1) : "") + "." + ext;
 
@@ -718,7 +724,7 @@ async function renderItems(data, opts, input) {
         badge.classList.remove("hidden");
       });
     } else {
-      badge.textContent = item.isCover ? "Cover" : "Photo";
+      badge.textContent = item.isCover ? "Cover image" : "Photo";
       badge.classList.remove("hidden");
     }
 

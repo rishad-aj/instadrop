@@ -1593,6 +1593,10 @@ button.copy-btn:hover, .copy-btn:hover { border-color: rgb(var(--primary)); back
 .copy-btn.copied .ic-copy { display: none; }
 .copy-btn.copied .ic-check { display: inline; }
 .item { margin-top: 14px; }
+.item-label {
+  font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  color: rgb(var(--content3)); margin-bottom: 6px;
+}
 .item .media-frame {
   width: 100%; min-height: 280px;
   background: #111; border: 1px solid rgb(var(--gray-6)); border-radius: .75rem;
