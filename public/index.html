@@ -377,7 +377,29 @@
   <div class="footer-bottom">Instadrop &middot; 100% ad-free &middot; not affiliated with Instagram or Meta</div>
 </footer>
 
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyCXWH_JDF9I3cW3qQSD51kwsBB0e1TuEu0",
+    authDomain: "instadrop-d0a23.firebaseapp.com",
+    projectId: "instadrop-d0a23",
+    storageBucket: "instadrop-d0a23.firebasestorage.app",
+    messagingSenderId: "105646198943",
+    appId: "1:105646198943:web:743576c43982bd05bbd2aa",
+    measurementId: "G-110L2WCX9M"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
 
 <script src="script.js"></script>
 
