@@ -2,12 +2,16 @@
   "name": "Instadrop — Free Instagram Media Downloader",
   "short_name": "Instadrop",
   "description": "Download Instagram reels, posts, carousels, profile pictures and story highlights. 100% free, ad-free, no login.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
   "lang": "en",
+  "categories": ["utilities", "photo", "music"],
+  "launch_handler": { "client_mode": "focus-existing" },
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
@@ -19,21 +23,54 @@
       "short_name": "Reel",
       "description": "Download an Instagram reel or post as MP4",
       "url": "/#reel",
-      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "shortcut-reel-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Grab a profile picture",
       "short_name": "Profile",
       "description": "Fetch any profile picture at original size",
       "url": "/#profile",
-      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "shortcut-profile-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Extract audio as MP3",
       "short_name": "MP3",
       "description": "Turn a reel's soundtrack into an MP3 file",
       "url": "/#audio",
-      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "shortcut-audio-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Paste link to download",
+      "short_name": "Paste",
+      "description": "Open the quick-paste bar and download in one tap",
+      "url": "/widget.html?action=paste",
+      "icons": [{ "src": "shortcut-paste-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
+  "share_target": {
+    "action": "/",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "widgets": [
+    {
+      "name": "InstaDrop quick paste",
+      "description": "Paste an Instagram link and jump straight to download.",
+      "tag": "instadrop-bar",
+      "template": "instadrop-bar-template",
+      "ms_ac_template": "widgets/instadrop-bar-template.json",
+      "data": "widgets/instadrop-bar-data.json",
+      "type": "application/json",
+      "screenshots": [
+        { "src": "widget-screenshot.png", "sizes": "560x112", "label": "InstaDrop paste bar widget" }
+      ],
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }],
+      "auth": false,
+      "update": 3600
     }
   ]
 }

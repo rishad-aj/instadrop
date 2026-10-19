@@ -1,7 +1,17 @@
-/* Instadrop service worker — enables "Add to Home Screen" install + offline cache.
-   Bump CACHE on every release so browsers fetch fresh files after a deploy. */
-var CACHE = "instadrop-v5";
-var CORE = ["/", "/index.html", "/styles.css", "/script.js", "/favicon.ico", "/logo.png", "/brand.png", "/manifest.webmanifest", "/apple-touch-icon-light.png", "/apple-touch-icon-dark.png"];
+/* Instadrop service worker v6 — install + offline cache + widgets + share_target.
+   Drop-in replacement for public/sw.js. Bump CACHE on every release. */
+var CACHE = "instadrop-v6";
+var CORE = [
+  "/", "/index.html", "/widget.html",
+  "/styles.css", "/script.js",
+  "/favicon.ico", "/logo.png", "/brand.png",
+  "/manifest.webmanifest",
+  "/shortcut-reel-192.png", "/shortcut-profile-192.png",
+  "/shortcut-audio-192.png", "/shortcut-paste-192.png",
+  "/apple-touch-icon-light.png", "/apple-touch-icon-dark.png",
+  "/widgets/instadrop-bar-template.json",
+  "/widgets/instadrop-bar-data.json"
+];
 
 self.addEventListener("install", function (e) {
   e.waitUntil(
@@ -17,6 +27,42 @@ self.addEventListener("activate", function (e) {
   );
 });
 
+/* PWA Widgets Board (Windows/Edge): keep tile data fresh + route taps. */
+self.addEventListener("widgetinstall", function (e) {
+  e.waitUntil(updateWidgets(e));
+});
+self.addEventListener("widgetresize", function (e) {
+  e.waitUntil(updateWidgets(e));
+});
+self.addEventListener("periodicsync", function (e) {
+  if (e.tag === "instadrop-widgets") e.waitUntil(updateWidgets(e));
+});
+async function updateWidgets(e) {
+  try {
+    if (!("widgets" in self) || !self.widgets) return;
+    var defs = await self.widgets.getTemplates();
+    for (var i = 0; i < defs.length; i++) {
+      await self.widgets.updateByTag(defs[i], {
+        linkPlaceholder: "Paste Instagram link or @username…",
+        linkHint: "Reels · posts · profile pics · MP3 — one tap"
+      });
+    }
+  } catch (err) { /* widgets not supported here — widget.html covers Android */ }
+}
+
+/* Widget Adaptive Card button taps. */
+self.addEventListener("widgetclick", function (e) {
+  var action = e.action || "open";
+  var data = (e.payload && e.payload.link) || "";
+  var url = action === "paste" ? "/widget.html?action=paste" : ("/?url=" + encodeURIComponent(data || "") + "#downloader");
+  e.waitUntil(clients.matchAll({ type: "window" }).then(function (list) {
+    for (var i = 0; i < list.length; i++) {
+      if ("navigate" in list[i]) return list[i].navigate(url).then(function (c) { return c && c.focus(); });
+    }
+    return clients.openWindow(url);
+  }));
+});
+
 self.addEventListener("fetch", function (e) {
   var req = e.request;
   if (req.method !== "GET") return;
@@ -27,6 +73,7 @@ self.addEventListener("fetch", function (e) {
     e.respondWith(
       fetch(req).then(function (res) {
         var copy = res.clone();
+        /* share_target GET lands on /?title=&text=&url= — cache shell, page JS reads params */
         caches.open(CACHE).then(function (c) { return c.put("/index.html", copy); });
         return res;
       }).catch(function () { return caches.match("/index.html"); })
@@ -37,7 +84,6 @@ self.addEventListener("fetch", function (e) {
   var isFresh = /\.(css|js|json|webmanifest)$/.test(url.pathname);
 
   if (isFresh) {
-    /* css/js/manifest: always try network first so deploys show instantly, cache as backup */
     e.respondWith(
       fetch(req).then(function (res) {
         if (res.ok) {
@@ -50,7 +96,6 @@ self.addEventListener("fetch", function (e) {
     return;
   }
 
-  /* images/fonts/others: cache-first, then network */
   e.respondWith(
     caches.match(req).then(function (hit) {
       return hit || fetch(req).then(function (res) {

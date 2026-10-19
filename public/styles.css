@@ -1708,3 +1708,13 @@ button.chip { font-size: 12.5px; }
 button.open, .open { color: rgb(var(--primary)); }
 button.dl-btn, .dl-btn { color: #fff; }
 button.dl-btn.alt, .dl-btn.alt { color: rgb(var(--content1)); }
+
+.save-row{display:flex;align-items:center;gap:8px;margin:10px 2px 0;font-size:13px;color:rgb(var(--content2));flex-wrap:wrap}
+.save-dot{width:9px;height:9px;border-radius:50%;background:rgb(var(--gray-7));flex:none}
+.save-dot.on{background:rgb(var(--success))}
+.save-txt{flex:1;min-width:180px}
+.save-btn{border:1px solid rgb(var(--primary));color:rgb(var(--primary));background:transparent;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600;cursor:pointer}
+.save-btn.ghost{border-color:rgb(var(--gray-7));color:rgb(var(--content2))}
+.insta-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#111;color:#fff;font-size:14px;font-weight:600;padding:11px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:.25s;z-index:9999;max-width:92vw;text-align:center}
+.insta-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+html[data-theme="dark"] .insta-toast{background:#f0f0f0;color:#111}

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InstaDrop — Quick paste</title>
+<meta name="theme-color" content="#2563eb">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<style>
+  :root{
+    --bg:#fcfcfc; --bg2:#f3f6fb; --inner:#e9eef5; --inner2:#dde6f1;
+    --text:#1c1c1e; --sub:#5f6b7a; --primary:#0072f5; --on-primary:#fff;
+    --ring:rgba(0,114,245,.28);
+  }
+  [data-theme="dark"]{
+    --bg:#161616; --bg2:#1e1e1e; --inner:#262626; --inner2:#2f2f2f;
+    --text:#f0f0f0; --sub:#a8a8a8; --primary:#2f8bff; --on-primary:#fff;
+    --ring:rgba(47,139,255,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--bg); color:var(--text);
+    min-height:100vh; display:flex; align-items:flex-start; justify-content:center;
+    padding:18px 14px;
+  }
+  .pill{
+    width:min(560px,100%);
+    background:var(--bg2);
+    border:1px solid rgba(120,130,150,.18);
+    border-radius:32px;
+    padding:12px;
+    display:flex; gap:10px; align-items:stretch;
+    box-shadow:0 12px 32px -18px rgba(0,0,0,.35);
+  }
+  .field{
+    flex:1; display:flex; align-items:center; gap:10px;
+    background:var(--inner);
+    border-radius:999px; padding:0 6px 0 14px;
+    min-width:0;
+  }
+  .field:focus-within{outline:2px solid var(--ring); background:var(--inner2)}
+  .logo{width:26px;height:26px;border-radius:8px;flex:none}
+  .field input{
+    flex:1; min-width:0; border:0; outline:0; background:transparent;
+    color:var(--text); font-size:16px; font-weight:600; padding:14px 4px;
+  }
+  .field input::placeholder{color:var(--sub); font-weight:500}
+  .go{
+    border:0; cursor:pointer; border-radius:999px;
+    background:var(--primary); color:var(--on-primary);
+    font-weight:700; font-size:15px; padding:0 18px; min-height:52px;
+    display:flex; align-items:center; gap:8px; flex:none;
+  }
+  .go:active{transform:scale(.97)}
+  .paste{
+    border:0; cursor:pointer; flex:none;
+    width:56px; height:52px; border-radius:50%;
+    background:var(--inner2); color:var(--text);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .paste svg{width:22px;height:22px}
+  .paste:active{transform:scale(.95)}
+  .wrap{width:min(560px,100%)}
+  .sub{margin:10px 4px 0; font-size:13px; color:var(--sub); display:flex; gap:8px; align-items:center; justify-content:space-between}
+  .sub button{border:1px solid rgba(120,130,150,.3); background:transparent; color:var(--text); border-radius:999px; padding:6px 12px; font-size:13px; cursor:pointer}
+  .note{margin:10px 4px 0; font-size:12.5px; color:var(--sub); line-height:1.5}
+  .hidden{display:none!important}
+</style>
+<script>
+  (function(){
+    try{
+      var q=new URLSearchParams(location.search);
+      var t=q.get('theme');
+      var saved=null;
+      try{ saved=localStorage.getItem('instadrop_theme'); }catch(e){}
+      var choice=t||saved||'system';
+      var dark=choice==='dark'||(choice==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);
+      // default to light like main site unless dark
+      if(choice==='light') dark=false;
+      document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+      document._themeChoice=choice;
+    }catch(e){ document.documentElement.setAttribute('data-theme','light'); }
+  })();
+</script>
+</head>
+<body>
+<div class="wrap">
+  <div class="pill" role="search" aria-label="InstaDrop quick paste">
+    <div class="field">
+      <img class="logo" src="icon-192.png" alt="" width="26" height="26">
+      <input id="linkInput" type="text" inputmode="url" autocomplete="off" spellcheck="false"
+        placeholder="Paste Instagram link or @username" aria-label="Paste Instagram link or username">
+    </div>
+    <button id="pasteBtn" class="paste" type="button" title="Paste from clipboard" aria-label="Paste from clipboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+    </button>
+    <button id="goBtn" class="go" type="button" title="Download">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 11l5 5 5-5"/><path d="M4 19h16"/></svg>
+      <span>Go</span>
+    </button>
+  </div>
+  <div class="sub">
+    <span id="statusText">Pastes stay on your device.</span>
+    <button id="openAppBtn" type="button">Open full app</button>
+  </div>
+  <p class="note">Tip: add this page to your Home screen for a one-tap paste bar. In the PWA/APK, downloads use <b>Pictures › InstaDrop</b> when you enable it once in the main app (see Save location). Theme follows your InstaDrop setting.</p>
+  <p class="note hidden" id="autoNote">Pasted from clipboard — opening download…</p>
+</div>
+
+<script>
+(function(){
+  var input=document.getElementById('linkInput');
+  var pasteBtn=document.getElementById('pasteBtn');
+  var goBtn=document.getElementById('goBtn');
+  var status=document.getElementById('statusText');
+  var autoNote=document.getElementById('autoNote');
+  var params=new URLSearchParams(location.search);
+  var action=params.get('action');
+
+  // keep theme in sync if main app changes it in another tab
+  window.addEventListener('storage',function(e){
+    if(e.key==='instadrop_theme'){
+      var c=e.newValue||'light';
+      var dark=c==='dark'||(c==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+    }
+  });
+
+  function looksLikeInsta(s){
+    s=String(s||'').trim();
+    if(!s) return false;
+    return /instagram\.com\//i.test(s) || /^@[A-Za-z0-9._]{1,30}$/.test(s) || /^[A-Za-z0-9._]{1,30}$/.test(s);
+  }
+  function go(){
+    var v=input.value.trim();
+    if(!v){ input.focus(); status.textContent='Paste a link first.'; return; }
+    // hand off to main app, which already knows ?url= / ?text= handling
+    location.href='/?url='+encodeURIComponent(v)+'#downloader';
+  }
+  async function doPaste(auto){
+    try{
+      var t=await navigator.clipboard.readText();
+      if(t&&t.trim()){
+        input.value=t.trim();
+        status.textContent='Pasted from clipboard.';
+        if(auto||looksLikeInsta(t)){ autoNote.classList.remove('hidden'); setTimeout(go,450); }
+        return;
+      }
+      status.textContent='Clipboard is empty — copy an Instagram link first.';
+      input.focus();
+    }catch(e){
+      status.textContent='Clipboard blocked — long-press the field and Paste.';
+      input.focus();
+    }
+  }
+  pasteBtn.addEventListener('click',function(){ doPaste(true); });
+  goBtn.addEventListener('click',go);
+  input.addEventListener('keydown',function(e){ if(e.key==='Enter') go(); });
+  document.getElementById('openAppBtn').addEventListener('click',function(){ location.href='/#downloader'; });
+
+  if(action==='paste'){
+    // give the page a beat to render, then try clipboard (requires focus/permission; may fall back to manual)
+    setTimeout(function(){ doPaste(true); },350);
+  }
+})();
+</script>
+</body>
+</html>
