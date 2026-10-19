@@ -1,0 +1,81 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.5",
+  "body": [
+    {
+      "type": "Container",
+      "style": "emphasis",
+      "bleed": true,
+      "items": [
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "auto",
+              "items": [
+                {
+                  "type": "Image",
+                  "url": "icon-192.png",
+                  "size": "small",
+                  "style": "person",
+                  "altText": "InstaDrop"
+                }
+              ],
+              "verticalContentAlignment": "center"
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "InstaDrop",
+                  "weight": "bolder",
+                  "size": "medium",
+                  "spacing": "none"
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "${linkHint}",
+                  "isSubtle": true,
+                  "size": "small",
+                  "spacing": "none",
+                  "wrap": true
+                }
+              ],
+              "verticalContentAlignment": "center"
+            }
+          ]
+        },
+        {
+          "type": "Input.Text",
+          "id": "link",
+          "label": "Instagram link or @username",
+          "placeholder": "${linkPlaceholder}",
+          "isMultiline": false
+        },
+        {
+          "type": "ActionSet",
+          "actions": [
+            {
+              "type": "Action.Execute",
+              "title": "Paste",
+              "verb": "paste",
+              "data": { "action": "paste" }
+            },
+            {
+              "type": "Action.Execute",
+              "title": "Download",
+              "verb": "open",
+              "style": "positive",
+              "data": { "action": "open" },
+              "associatedInputs": "auto"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
