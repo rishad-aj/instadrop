@@ -1647,8 +1647,13 @@ button.copy-btn:hover, .copy-btn:hover { border-color: rgb(var(--primary)); back
 .dl-btn.alt:hover:not(:disabled) { background: rgb(var(--gray-4)); filter: none; }
 .dl-btn:disabled { opacity: .55; cursor: wait; }
 
-/* footer (RippleUI site footer) */
-.site-footer { background: rgb(var(--gray-3)); }
+/* footer (RippleUI site footer) — plain top, gradient starts lower at the FAQ/legal row */
+.site-footer {
+    background: linear-gradient(to bottom, rgb(var(--gray-3)) 0%, rgb(var(--gray-3)) 45%, #e6f1f8 65%, #b4d6ec 85%, #9dc1dc 100%);
+  }
+html[data-theme="dark"] .site-footer {
+    background: linear-gradient(to bottom, rgb(var(--gray-3)) 0%, rgb(var(--gray-3)) 45%, #0d1c3f 70%, #162f83 100%);
+  }
 .footer-grid {
   max-width: 1280px; margin: 0 auto; padding: 80px 20px 60px;
   display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px;
@@ -1662,6 +1667,46 @@ button.copy-btn:hover, .copy-btn:hover { border-color: rgb(var(--primary)); back
 .footer-grid ul a { color: rgb(var(--content2)); font-size: 14px; text-decoration: none; }
 .footer-grid ul a:hover { text-decoration: underline; }
 .footer-bottom { border-top: 1px solid rgb(var(--gray-6)); padding: 20px; text-align: center; color: rgb(var(--content3)); font-size: 13px; }
+
+  /* ===== NEW: Ideogram-style legal row + giant wordmark ===== */
+  .footer-legal {
+    border-top: 1px solid rgb(var(--gray-6));
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 20px 20px 10px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px 24px; flex-wrap: wrap;
+    color: rgb(var(--content3));
+    font-size: 13px; line-height: 1.6;
+  }
+  .footer-legal p { margin: 0; color: rgb(var(--content3)); font-size: 13px; }
+  .footer-legal a {
+    color: inherit; text-decoration: underline;
+    text-underline-offset: 3px; text-decoration-color: rgb(var(--gray-8));
+  }
+  .footer-legal a:hover { color: rgb(var(--content1)); text-decoration-color: currentColor; }
+  .footer-legal-right { white-space: nowrap; }
+  @media (max-width: 640px) {
+    .footer-legal { justify-content: center; text-align: center; }
+    .footer-legal-right { white-space: normal; }
+  }
+  .footer-wordmark { overflow: hidden; line-height: 0; }
+  .footer-wordmark { color: #5ba9ff; opacity: .3; }
+  html[data-theme="dark"] .footer-wordmark { color: #2e59ae; opacity: 1; }
+  .footer-wordmark svg {
+    width: 100%;
+    height: clamp(100px, 18vw, 220px);
+    display: block;
+    user-select: none; pointer-events: none;
+  }
+  /* mobile: refit art to narrow viewports — full width visible, smaller, still bottom-cropped */
+  @media (max-width: 640px) {
+    .footer-wordmark svg { height: 96px; }
+    .footer-wordmark svg g {
+      transform: translate(470px, 315px) scale(1.5);
+      transform-box: view-box;
+    }
+  }
 
 /* scroll reveal animations */
 .reveal {
