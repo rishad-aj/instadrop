@@ -1345,7 +1345,8 @@ html[data-theme="dark"] .side-nav { background-color: rgb(var(--backgroundSecond
 .side-theme-item:hover { background-color: rgb(var(--gray-4)); color: rgb(var(--content1)); }
 .side-theme-item.dd-active { background-color: rgb(var(--primary)); border-color: transparent; color: #fff; }
 .side-theme-item .ic { width: 16px; height: 16px; }
-.side-cta { margin-top: auto; }
+.side-cta { margin-top: auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.side-cta.is-installed { opacity: .75; cursor: default; }
 @media (min-width: 1024px) { .side-nav, .side-overlay { display: none; } }
 
 /* theme switcher dropdown (RippleUI DarkModeSwitcher) */

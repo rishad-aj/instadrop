@@ -226,6 +226,60 @@ if (hamburgerBtn) {
   window.addEventListener("resize", () => { if (window.innerWidth > 1023) setSideOpen(false); });
 }
 
+/* ---------------- PWA install button (hamburger menu) ---------------- */
+let deferredInstallPrompt = null;
+const installPwaBtn = document.getElementById("installPwaBtn");
+const installPwaText = document.getElementById("installPwaText");
+
+function markPwaInstalled() {
+  if (!installPwaBtn) return;
+  installPwaBtn.classList.add("is-installed");
+  installPwaBtn.innerHTML = '<svg class="ic" style="width:17px;height:17px;"><use href="#i-check"/></svg><span>App installed</span>';
+}
+
+if (isStandaloneApp()) {
+  markPwaInstalled();
+}
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+});
+
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+  markPwaInstalled();
+  toast("Instadrop installed! Open it anytime from your home screen.");
+});
+
+if (installPwaBtn) {
+  installPwaBtn.addEventListener("click", async () => {
+    setSideOpen(false);
+    if (isStandaloneApp() || installPwaBtn.classList.contains("is-installed")) {
+      toast("Instadrop is already installed on your device.");
+      return;
+    }
+    if (deferredInstallPrompt) {
+      try {
+        deferredInstallPrompt.prompt();
+        const choice = await deferredInstallPrompt.userChoice;
+        if (choice && choice.outcome === "accepted") {
+          deferredInstallPrompt = null;
+          markPwaInstalled();
+        }
+      } catch (e) {}
+      return;
+    }
+    const ua = navigator.userAgent || "";
+    const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    if (isIOS) {
+      toast("To install: tap Share in Safari, then tap 'Add to Home Screen'.");
+    } else {
+      toast("To install: open your browser menu (⋮) and tap 'Install app' or 'Add to Home screen'.");
+    }
+  });
+}
+
 /* ---------------- scroll reveal ---------------- */
 const revealEls = document.querySelectorAll(".reveal");
 if ("IntersectionObserver" in window) {
