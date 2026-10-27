@@ -1,10 +1,11 @@
-/* Instadrop service worker v14 — install + offline cache + widgets + share_target.
+/* Instadrop service worker v16 — install + offline cache + widgets + share_target.
    Drop-in replacement for public/sw.js. Bump CACHE on every release. */
-var CACHE = "instadrop-v14";
+var CACHE = "instadrop-v16";
 var CORE = [
   "/", "/index.html", "/widget.html", "/privacy.html", "/terms.html", "/404.html",
   "/css/styles.css", "/css/legal.css", "/js/script.js",
   "/icons/favicon.ico", "/images/logo.png", "/images/brand.png", "/images/wordmark.svg",
+  "/images/widget-screenshot.png", "/images/screenshot-wide.png", "/images/screenshot-narrow.png",
   "/manifest.webmanifest",
   "/icons/icon-192.png", "/icons/icon-512.png", "/icons/icon-maskable-512.png",
   "/icons/shortcut-reel-192.png", "/icons/shortcut-profile-192.png",
@@ -44,8 +45,8 @@ async function updateWidgets(e) {
     var defs = await self.widgets.getTemplates();
     for (var i = 0; i < defs.length; i++) {
       await self.widgets.updateByTag(defs[i], {
-        linkPlaceholder: "Paste Instagram link or @username…",
-        linkHint: "Reels · posts · profile pics · MP3 — one tap"
+        linkPlaceholder: "https://www.instagram.com/example/... or @username",
+        linkHint: "Reels · posts · profile pics · extract audio — 100% free"
       });
     }
   } catch (err) { /* widgets not supported here — widget.html covers Android */ }

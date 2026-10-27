@@ -433,28 +433,6 @@ async function fetchBlob(url, tries = 2) {
   throw lastErr;
 }
 
-/* ============================================================
-   InstaDrop smartSave — Pictures/InstaDrop support (drop-in)
-   Paste this BEFORE triggerSave() in public/script.js and
-   replace saveBtn.onclick / audio / profile-pic saves with
-   smartSave(blob, filename). No dependencies.
-   Works where File System Access exists (desktop Chrome/Edge);
-   everywhere else it falls back to classic <a download>.
-   On Android pure-PWA the browser forces Downloads — the APK
-   note in README-PWA.md covers the native TWA fix.
-   ============================================================ */
-
-/* ---- prefs ---- */
-function instaSaveMode() {
-  try { return localStorage.getItem("instadrop_save_mode") || "downloads"; }
-  catch (e) { return "downloads"; }
-}
-function setInstaSaveMode(m) {
-  try { localStorage.setItem("instadrop_save_mode", m); } catch (e) {}
-}
-function fsAccessOK() {
-  return typeof window.showDirectoryPicker === "function";
-}
 function isStandaloneApp() {
   try {
     if (matchMedia("(display-mode: standalone)").matches) return true;
@@ -464,79 +442,7 @@ function isStandaloneApp() {
   return false;
 }
 
-/* ---- IndexedDB dir-handle store (handles can't live in localStorage) ---- */
-function idbOpen() {
-  return new Promise(function (res, rej) {
-    var r = indexedDB.open("instadrop-prefs", 1);
-    r.onupgradeneeded = function () { r.result.createObjectStore("handles"); };
-    r.onsuccess = function () { res(r.result); };
-    r.onerror = function () { rej(r.error); };
-  });
-}
-async function getSaveDirHandle() {
-  try {
-    var db = await idbOpen();
-    return await new Promise(function (res) {
-      var tx = db.transaction("handles", "readonly").objectStore("handles").get("saveDir");
-      tx.onsuccess = function () { res(tx.result || null); };
-      tx.onerror = function () { res(null); };
-    });
-  } catch (e) { return null; }
-}
-async function setSaveDirHandle(h) {
-  var db = await idbOpen();
-  return new Promise(function (res, rej) {
-    var tx = db.transaction("handles", "readwrite").objectStore("handles").put(h, "saveDir");
-    tx.onsuccess = function () { res(true); };
-    tx.onerror = function () { rej(tx.error); };
-  });
-}
-async function ensureDirPermission(handle) {
-  if (!handle) return false;
-  try {
-    if ((await handle.queryPermission({ mode: "readwrite" })) === "granted") return true;
-    return (await handle.requestPermission({ mode: "readwrite" })) === "granted";
-  } catch (e) { return false; }
-}
-
-/* One-time folder pick. Tell the user to open Pictures > create/select InstaDrop. */
-async function pickInstaDropFolder() {
-  if (!fsAccessOK()) {
-    showError("This browser can't pick a folder — files will use Downloads. Open the installed app in Chrome/Edge for Pictures › InstaDrop.");
-    return null;
-  }
-  try {
-    var h = await window.showDirectoryPicker({ id: "instadrop", mode: "readwrite", startIn: "pictures" });
-    if (!(await ensureDirPermission(h))) return null;
-    await setSaveDirHandle(h);
-    setInstaSaveMode("instadrop-folder");
-    renderSaveRow();
-    return h;
-  } catch (e) {
-    if (e && e.name !== "AbortError") showError("Couldn't keep that folder: " + e.message);
-    return null;
-  }
-}
-
-async function saveToInstaDropFolder(blob, filename) {
-  var dir = await getSaveDirHandle();
-  if (!dir && fsAccessOK()) dir = await pickInstaDropFolder();
-  if (!dir) return false;
-  if (!(await ensureDirPermission(dir))) return false;
-  try {
-    var fh = await dir.getFileHandle(filename, { create: true });
-    var w = await fh.createWritable();
-    await w.write(blob);
-    await w.close();
-    return true;
-  } catch (e) {
-    showError("Couldn't write to Pictures › InstaDrop (" + e.message + ") — saved to Downloads instead.");
-    return false;
-  }
-}
-
-/* Classic fallback (always works, lands in Downloads). */
-function triggerSaveClassic(blob, filename) {
+function triggerSave(blob, filename) {
   var a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = filename;
@@ -544,19 +450,6 @@ function triggerSaveClassic(blob, filename) {
   a.click();
   a.remove();
   setTimeout(function () { URL.revokeObjectURL(a.href); }, 15000);
-}
-
-/* Main entry — use everywhere instead of triggerSave(). */
-async function smartSave(blob, filename) {
-  if (instaSaveMode() === "instadrop-folder" && fsAccessOK()) {
-    var ok = await saveToInstaDropFolder(blob, filename);
-    if (ok) {
-      showError(""); // clear
-      toast("Saved to Pictures › InstaDrop › " + filename);
-      return;
-    }
-  }
-  triggerSaveClassic(blob, filename);
 }
 
 function toast(msg, title) {
@@ -589,44 +482,6 @@ function toast(msg, title) {
   t.classList.add("show");
   clearTimeout(t._tm);
   t._tm = setTimeout(function () { t.classList.remove("show"); }, 4500);
-}
-
-/* Settings row — call renderSaveRow() once on boot. Needs <div id="saveRow"> (see index-patch.html). */
-async function renderSaveRow() {
-  var row = document.getElementById("saveRow");
-  if (!row) return;
-  var mode = instaSaveMode();
-  var hasHandle = !!(await getSaveDirHandle());
-  var standalone = isStandaloneApp();
-  row.innerHTML = "";
-  var dot = document.createElement("span");
-  dot.className = "save-dot" + (mode === "instadrop-folder" && hasHandle ? " on" : "");
-  row.appendChild(dot);
-  var txt = document.createElement("span");
-  txt.className = "save-txt";
-  if (!fsAccessOK()) {
-    txt.textContent = "Save location: Downloads (this browser can't write to Pictures — use Chrome/Edge installed app for Pictures › InstaDrop).";
-    row.appendChild(txt);
-    return;
-  }
-  txt.textContent = mode === "instadrop-folder" && hasHandle
-    ? "Save location: Pictures › InstaDrop"
-    : "Save location: Downloads" + (standalone ? " — enable Pictures › InstaDrop for the app" : " — or enable Pictures › InstaDrop");
-  row.appendChild(txt);
-  var btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "save-btn";
-  btn.textContent = (mode === "instadrop-folder" && hasHandle) ? "Change" : "Use Pictures › InstaDrop";
-  btn.onclick = pickInstaDropFolder;
-  row.appendChild(btn);
-  if (mode === "instadrop-folder" && hasHandle) {
-    var back = document.createElement("button");
-    back.type = "button";
-    back.className = "save-btn ghost";
-    back.textContent = "Use Downloads";
-    back.onclick = function () { setInstaSaveMode("downloads"); renderSaveRow(); };
-    row.appendChild(back);
-  }
 }
 
 function fmtDuration(sec) {
@@ -987,7 +842,7 @@ async function renderItems(data, opts, input) {
       dropHint();
       saveBtn.disabled = false;
       saveBtn.textContent = "Download (" + mb + " MB)";
-      saveBtn.onclick = () => smartSave(blob, filename);
+      saveBtn.onclick = () => triggerSave(blob, filename);
       if (audioBtn) {
         audioBtn.disabled = false;
         audioBtn.onclick = async () => {
@@ -1000,7 +855,7 @@ async function renderItems(data, opts, input) {
           try {
             const mp3 = await convertToMp3(bytes);
             spinnerCtn.classList.add("hidden");
-            smartSave(new Blob([mp3], { type: "audio/mpeg" }), filename.replace(/\.mp4$/, ".mp3"));
+            triggerSave(new Blob([mp3], { type: "audio/mpeg" }), filename.replace(/\.mp4$/, ".mp3"));
             audioBtn.textContent = "MP3 saved ✓";
             setTimeout(() => { audioBtn.textContent = "Audio (MP3)"; audioBtn.disabled = false; }, 4000);
           } catch (e) {
@@ -1134,7 +989,7 @@ async function renderDp(username, input) {
   btn.disabled = false;
   if (blob) {
     btn.textContent = "Download profile pic (" + nw + "×" + nh + ")";
-    btn.onclick = () => smartSave(blob, username + "_profile_pic_" + nw + "x" + nh + ".jpg");
+    btn.onclick = () => triggerSave(blob, username + "_profile_pic_" + nw + "x" + nh + ".jpg");
   } else {
     const note = document.createElement("div");
     note.className = "frame-hint";

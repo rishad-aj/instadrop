@@ -5,7 +5,7 @@
   "body": [
     {
       "type": "Container",
-      "style": "emphasis",
+      "style": "default",
       "bleed": true,
       "items": [
         {
@@ -17,10 +17,9 @@
               "items": [
                 {
                   "type": "Image",
-                  "url": "/icons/icon-192.png",
+                  "url": "/images/logo.png",
                   "size": "small",
-                  "style": "person",
-                  "altText": "InstaDrop"
+                  "altText": "Instadrop"
                 }
               ],
               "verticalContentAlignment": "center"
@@ -31,7 +30,7 @@
               "items": [
                 {
                   "type": "TextBlock",
-                  "text": "InstaDrop",
+                  "text": "Instadrop",
                   "weight": "bolder",
                   "size": "medium",
                   "spacing": "none"
@@ -52,7 +51,7 @@
         {
           "type": "Input.Text",
           "id": "link",
-          "label": "Instagram link or @username",
+          "label": "Paste your link below",
           "placeholder": "${linkPlaceholder}",
           "isMultiline": false
         },
