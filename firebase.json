@@ -5,10 +5,21 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "package.json",
+      "package-lock.json",
+      "server.js",
+      "metadata.json"
     ],
     "cleanUrls": true,
     "trailingSlash": false,
+    "redirects": [
+      {
+        "source": "/favicon.ico",
+        "destination": "/icons/favicon.ico",
+        "type": 301
+      }
+    ],
 
     "headers": [
       {

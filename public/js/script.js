@@ -611,15 +611,7 @@ async function renderSaveRow() {
   }
 }
 
-function smartSave(blob, filename) {
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 15000);
-}
+renderSaveRow();
 
 function fmtDuration(sec) {
   if (!isFinite(sec) || sec <= 0) return "";

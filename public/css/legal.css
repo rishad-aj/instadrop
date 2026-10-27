@@ -1,8 +1,7 @@
 /* ============================================================
    legal.css — page-specific styles for the Instadrop legal pages
    (Terms & Conditions + Privacy Policy).
-   Pairs with src/instadrop.css, which is a byte-exact vendored copy
-   of the Instadrop site stylesheet, plus the RippleUI CDN components.
+   Pairs with css/styles.css and the RippleUI CDN components.
    ============================================================ */
 
 .legal-wrap {

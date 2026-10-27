@@ -9,10 +9,10 @@
   <link rel="canonical" href="https://instadrop.web.app/terms">
   <meta name="theme-color" content="#2563eb">
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#161616">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="icon" type="image/png" sizes="256x256" href="logo.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-light.png">
-  <link rel="apple-touch-icon" sizes="180x180" media="(prefers-color-scheme: dark)" href="apple-touch-icon-dark.png">
+  <link rel="icon" type="image/x-icon" href="icons/favicon.ico">
+  <link rel="icon" type="image/png" sizes="256x256" href="images/logo.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-light.png">
+  <link rel="apple-touch-icon" sizes="180x180" media="(prefers-color-scheme: dark)" href="icons/apple-touch-icon-dark.png">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Instadrop">
@@ -21,15 +21,15 @@
   <meta property="og:title" content="Terms &amp; Conditions &mdash; Instadrop">
   <meta property="og:description" content="The agreement between you and Instadrop. 100 numbered clauses, grouped into 19 sections.">
   <meta property="og:url" content="https://instadrop.web.app/terms">
-  <meta property="og:image" content="https://instadrop.web.app/og-image.png">
+  <meta property="og:image" content="https://instadrop.web.app/images/og-image.png">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/rippleui@1.12.1/dist/css/base.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/rippleui@1.12.1/dist/css/components.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="legal.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/legal.css">
   <script>
     (function () {
       var s = null;
@@ -79,8 +79,8 @@
 <nav class="navbar navbar-sticky navbar-glass" id="siteNav">
   <div class="navbar-inner">
     <a class="app-brand" href="./">
-      <img class="brand-logo" src="logo.png" alt="Instadrop logo" width="34" height="34">
-      <img class="brand-wordmark" src="brand.png" alt="Instadrop" width="122" height="26">
+      <img class="brand-logo" src="images/logo.png" alt="Instadrop logo" width="34" height="34">
+      <img class="brand-wordmark" src="images/brand.png" alt="Instadrop" width="122" height="26">
     </a>
     <div class="navbar-center">
       <div class="navbar-links">
@@ -126,7 +126,10 @@
       <button class="side-theme-item" data-theme-choice="system" type="button"><svg class="ic"><use href="#i-display"/></svg> System</button>
     </div>
   </div>
-  <a class="btn btn-primary btn-md btn-rounded btn-block side-cta" href="./#downloader">Start downloading</a>
+  <button class="btn btn-primary btn-md btn-rounded btn-block side-cta" id="installPwaBtn" type="button">
+    <svg class="ic" style="width:17px;height:17px;"><use href="#i-download"/></svg>
+    <span id="installPwaText">Install the app</span>
+  </button>
 </aside>
 
 <div class="legal-wrap" id="top">
@@ -223,7 +226,7 @@
 <footer class="site-footer">
   <div class="footer-grid reveal">
     <div>
-      <div class="foot-brand"><img class="brand-logo" src="logo.png" alt="Instadrop logo" width="34" height="34"> <img class="brand-wordmark" src="brand.png" alt="Instadrop" width="122" height="26"></div>
+      <div class="foot-brand"><img class="brand-logo" src="images/logo.png" alt="Instadrop logo" width="34" height="34"> <img class="brand-wordmark" src="images/brand.png" alt="Instadrop" width="122" height="26"></div>
       <p>A privacy-friendly, <strong>ad-free</strong> Instagram media downloader. Your links and files stay on your device &mdash; nothing is stored by the tool.</p>
     </div>
     <div>
@@ -314,6 +317,33 @@
       if (sideOverlay) sideOverlay.addEventListener("click", function () { setSideOpen(false); });
       if (sideNav) sideNav.addEventListener("click", function (e) { if (e.target.closest("a")) setSideOpen(false); });
       document.addEventListener("keydown", function (e) { if (e.key === "Escape") setSideOpen(false); });
+    }
+
+    /* PWA install button */
+    var deferredPrompt = null;
+    var installBtn = document.getElementById("installPwaBtn");
+    function isStandalone() {
+      try { return matchMedia("(display-mode: standalone)").matches || navigator.standalone === true; } catch (e) { return false; }
+    }
+    function markInstalled() {
+      if (!installBtn) return;
+      installBtn.classList.add("is-installed");
+      installBtn.innerHTML = '<svg class="ic" style="width:17px;height:17px;"><use href="#i-check"/></svg><span>App installed</span>';
+    }
+    if (isStandalone()) markInstalled();
+    window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); deferredPrompt = e; });
+    window.addEventListener("appinstalled", function () { deferredPrompt = null; markInstalled(); });
+    if (installBtn) {
+      installBtn.addEventListener("click", function () {
+        setSideOpen(false);
+        if (isStandalone() || installBtn.classList.contains("is-installed")) return;
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then(function (c) { if (c && c.outcome === "accepted") { deferredPrompt = null; markInstalled(); } });
+        } else {
+          location.href = "./#downloader";
+        }
+      });
     }
 
     /* toolbar */

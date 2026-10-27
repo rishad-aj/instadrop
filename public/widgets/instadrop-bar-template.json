@@ -17,7 +17,7 @@
               "items": [
                 {
                   "type": "Image",
-                  "url": "icon-192.png",
+                  "url": "/icons/icon-192.png",
                   "size": "small",
                   "style": "person",
                   "altText": "InstaDrop"

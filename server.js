@@ -5,6 +5,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const publicDir = path.join(__dirname, 'public');
 
+// Redirect root /favicon.ico requests to /icons/favicon.ico
+app.get('/favicon.ico', (req, res) => {
+  res.redirect(301, '/icons/favicon.ico');
+});
+
 // Serve static files from /public with cleanUrls support (.html extension resolution)
 app.use(
   express.static(publicDir, {

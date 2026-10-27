@@ -5,11 +5,11 @@
 <img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:93C5FD,50:3B82F6,100:2563EB&height=130&section=header" alt="" />
 
 <a href="https://instadrop.web.app">
-  <img src="public/logo.png" height="72" alt="Instadrop" />
+  <img src="public/images/logo.png" height="72" alt="Instadrop" />
   &nbsp;
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://user.uploads.dev/file/33e8a6fc8173e543fbb997b994d3e74c.png" />
-    <img src="public/brand.png" height="72" alt="Instadrop" />
+    <img src="public/images/brand.png" height="72" alt="Instadrop" />
   </picture>
 </a>
 
@@ -148,16 +148,31 @@ endpoints and handed straight to you. **No ads, no login, no trackers.**
 ├── firebase.json             hosting config (clean URLs, caching, headers)
 ├── .firebaserc               Firebase project id
 ├── public/
-│   ├── index.html            page + SEO / OG / JSON-LD metadata
-│   ├── styles.css            all styling
-│   ├── script.js             all logic
+│   ├── index.html            main page + SEO / OG / JSON-LD metadata
+│   ├── privacy.html          privacy policy page
+│   ├── terms.html            terms & conditions page
+│   ├── widget.html           quick-paste PWA widget page
+│   ├── 404.html              custom 404 page
 │   ├── manifest.webmanifest  PWA manifest (installable app)
 │   ├── sw.js                 service worker (offline cache)
-│   ├── logo.png / brand.png / favicon.ico   branding
-│   ├── icon-192 / icon-512.png              PWA icons
-│   ├── og-image.png          social share card
 │   ├── robots.txt / sitemap.xml             SEO
-│   └── 404.html              custom 404
+│   ├── css/
+│   │   ├── styles.css        main application styling
+│   │   └── legal.css         legal pages styling
+│   ├── js/
+│   │   └── script.js         application logic
+│   ├── icons/
+│   │   ├── favicon.ico
+│   │   ├── icon-192.png / icon-512.png / icon-maskable-512.png
+│   │   ├── apple-touch-icon-light.png / apple-touch-icon-dark.png
+│   │   └── shortcut-*.png    PWA app shortcut icons
+│   ├── images/
+│   │   ├── logo.png / brand.png
+│   │   ├── og-image.png      social share card
+│   │   └── widget-screenshot.png
+│   └── widgets/
+│       ├── instadrop-bar-template.json
+│       └── instadrop-bar-data.json
 └── functions/                Telegram bot backend (optional, see below)
 ```
 
@@ -222,7 +237,7 @@ is untouched.
 <img src="https://readme-typing-svg.demolab.com?font=Poppins&weight=600&size=18&pause=900&color=2563EB&center=true&vCenter=true&width=420&height=40&lines=Ready+to+try+it%3F" alt="" />
 
 <a href="https://instadrop.web.app">
-  <img src="public/logo.png" height="56" alt="Instadrop" />
+  <img src="public/images/logo.png" height="56" alt="Instadrop" />
 </a>
 
 <br/><br/>

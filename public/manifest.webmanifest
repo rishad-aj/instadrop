@@ -13,9 +13,9 @@
   "categories": ["utilities", "photo", "music"],
   "launch_handler": { "client_mode": "focus-existing" },
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
     {
@@ -23,28 +23,28 @@
       "short_name": "Reel",
       "description": "Download an Instagram reel or post as MP4",
       "url": "/#reel",
-      "icons": [{ "src": "shortcut-reel-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "icons/shortcut-reel-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Grab a profile picture",
       "short_name": "Profile",
       "description": "Fetch any profile picture at original size",
       "url": "/#profile",
-      "icons": [{ "src": "shortcut-profile-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "icons/shortcut-profile-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Extract audio as MP3",
       "short_name": "MP3",
       "description": "Turn a reel's soundtrack into an MP3 file",
       "url": "/#audio",
-      "icons": [{ "src": "shortcut-audio-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "icons/shortcut-audio-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Paste link to download",
       "short_name": "Paste",
       "description": "Open the quick-paste bar and download in one tap",
       "url": "/widget.html?action=paste",
-      "icons": [{ "src": "shortcut-paste-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "icons/shortcut-paste-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ],
   "share_target": {
@@ -66,9 +66,9 @@
       "data": "widgets/instadrop-bar-data.json",
       "type": "application/json",
       "screenshots": [
-        { "src": "widget-screenshot.png", "sizes": "560x112", "label": "InstaDrop paste bar widget" }
+        { "src": "images/widget-screenshot.png", "sizes": "560x112", "label": "InstaDrop paste bar widget" }
       ],
-      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }],
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }],
       "auth": false,
       "update": 3600
     }
