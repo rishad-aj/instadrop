@@ -1695,16 +1695,21 @@ html[data-theme="dark"] .footer-gradient {
   .footer-wordmark { overflow: hidden; line-height: 0; padding: 0 5%; }
   .footer-wordmark { color: #5ba9ff; opacity: .3; }
   html[data-theme="dark"] .footer-wordmark { color: #2e59ae; opacity: 1; }
-  .footer-wordmark svg {
+  .footer-wordmark svg,
+  .footer-wordmark img {
     width: 100%;
     height: clamp(100px, 18vw, 220px);
     display: block;
     user-select: none; pointer-events: none;
   }
+  html[data-theme="dark"] .footer-wordmark img {
+    filter: brightness(0.56) hue-rotate(6deg);
+  }
   /* mobile uses the same fluid sizing/position as desktop (no refit) */
   @media (max-width: 640px) {
     /* keep the whole word visible: fixed heights + slice would chop its ends off */
-    .footer-wordmark svg { height: auto; }
+    .footer-wordmark svg,
+    .footer-wordmark img { height: auto; }
   }
 
 /* scroll reveal animations */
