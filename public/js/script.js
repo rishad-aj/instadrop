@@ -249,14 +249,14 @@ window.addEventListener("beforeinstallprompt", (e) => {
 window.addEventListener("appinstalled", () => {
   deferredInstallPrompt = null;
   markPwaInstalled();
-  toast("Instadrop installed! Open it anytime from your home screen.");
+  toast("Open it anytime right from your home screen.", "Instadrop installed");
 });
 
 if (installPwaBtn) {
   installPwaBtn.addEventListener("click", async () => {
     setSideOpen(false);
     if (isStandaloneApp() || installPwaBtn.classList.contains("is-installed")) {
-      toast("Instadrop is already installed on your device.");
+      toast("Instadrop is already installed on your device.", "App installed");
       return;
     }
     if (deferredInstallPrompt) {
@@ -273,9 +273,9 @@ if (installPwaBtn) {
     const ua = navigator.userAgent || "";
     const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     if (isIOS) {
-      toast("To install: tap Share in Safari, then tap 'Add to Home Screen'.");
+      toast("Tap Share in Safari, then tap 'Add to Home Screen'.", "Install Instadrop");
     } else {
-      toast("To install: open your browser menu (⋮) and tap 'Install app' or 'Add to Home screen'.");
+      toast("Open your browser menu (⋮) and tap 'Install app' or 'Add to Home screen'.", "Install Instadrop");
     }
   });
 }
@@ -559,18 +559,36 @@ async function smartSave(blob, filename) {
   triggerSaveClassic(blob, filename);
 }
 
-function toast(msg) {
+function toast(msg, title) {
   var t = document.getElementById("instaToast");
   if (!t) {
     t = document.createElement("div");
     t.id = "instaToast";
     t.className = "insta-toast";
+    t.setAttribute("role", "status");
+    t.setAttribute("aria-live", "polite");
+    t.innerHTML =
+      '<img class="insta-toast-icon" src="images/logo.png" alt="" width="36" height="36">' +
+      '<div class="insta-toast-body">' +
+        '<div class="insta-toast-title"></div>' +
+        '<div class="insta-toast-msg"></div>' +
+      '</div>' +
+      '<button class="insta-toast-close" type="button" aria-label="Dismiss">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>' +
+      '</button>';
+    t.querySelector(".insta-toast-close").addEventListener("click", function () {
+      t.classList.remove("show");
+      clearTimeout(t._tm);
+    });
     document.body.appendChild(t);
   }
-  t.textContent = msg;
+  var titleEl = t.querySelector(".insta-toast-title");
+  var msgEl = t.querySelector(".insta-toast-msg");
+  titleEl.textContent = title || "Instadrop";
+  msgEl.textContent = msg;
   t.classList.add("show");
   clearTimeout(t._tm);
-  t._tm = setTimeout(function () { t.classList.remove("show"); }, 3200);
+  t._tm = setTimeout(function () { t.classList.remove("show"); }, 4500);
 }
 
 /* Settings row — call renderSaveRow() once on boot. Needs <div id="saveRow"> (see index-patch.html). */
@@ -610,8 +628,6 @@ async function renderSaveRow() {
     row.appendChild(back);
   }
 }
-
-renderSaveRow();
 
 function fmtDuration(sec) {
   if (!isFinite(sec) || sec <= 0) return "";

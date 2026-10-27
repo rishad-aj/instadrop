@@ -1759,6 +1759,79 @@ button.dl-btn.alt, .dl-btn.alt { color: rgb(var(--content1)); }
 .save-txt{flex:1;min-width:180px}
 .save-btn{border:1px solid rgb(var(--primary));color:rgb(var(--primary));background:transparent;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600;cursor:pointer}
 .save-btn.ghost{border-color:rgb(var(--gray-7));color:rgb(var(--content2))}
-.insta-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#111;color:#fff;font-size:14px;font-weight:600;padding:11px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:.25s;z-index:9999;max-width:92vw;text-align:center}
-.insta-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-html[data-theme="dark"] .insta-toast{background:#f0f0f0;color:#111}
+.insta-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%) translateY(20px) scale(.97);
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: max-content;
+  max-width: min(440px, calc(100vw - 28px));
+  background-color: rgb(var(--gray-3) / .95);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  backdrop-filter: blur(12px) saturate(150%);
+  color: rgb(var(--content1));
+  border: 1px solid rgb(var(--gray-6));
+  border-radius: 16px;
+  padding: 13px 15px;
+  box-shadow: 0 20px 45px -12px rgba(0, 0, 0, .28), 0 4px 12px rgba(0, 0, 0, .08);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .24s cubic-bezier(.22, .61, .36, 1), transform .24s cubic-bezier(.22, .61, .36, 1), visibility .24s;
+  z-index: 9999;
+  text-align: left;
+}
+.insta-toast.show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+.insta-toast-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  flex: none;
+  display: block;
+}
+.insta-toast-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.insta-toast-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: rgb(var(--content1));
+  line-height: 1.3;
+}
+.insta-toast-msg {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: rgb(var(--content2));
+  line-height: 1.45;
+}
+.insta-toast-close {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: rgb(var(--content3));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color .15s, color .15s;
+}
+.insta-toast-close:hover {
+  background-color: rgb(var(--gray-5));
+  color: rgb(var(--content1));
+}
+
