@@ -36,23 +36,23 @@
   "shortcuts": [
     {
       "name": "Download a reel",
-      "short_name": "Reel",
+      "short_name": "Reels",
       "description": "Download an Instagram reel or post as MP4",
-      "url": "/#reel",
+      "url": "/reels",
       "icons": [{ "src": "icons/shortcut-reel-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Grab a profile picture",
-      "short_name": "Profile",
+      "short_name": "DP",
       "description": "Fetch any profile picture at original size",
-      "url": "/#profile",
+      "url": "/dp",
       "icons": [{ "src": "icons/shortcut-profile-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Extract audio",
       "short_name": "Audio",
       "description": "Turn a reel's soundtrack into an MP3 file",
-      "url": "/#audio",
+      "url": "/audio",
       "icons": [{ "src": "icons/shortcut-audio-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {

@@ -10,6 +10,17 @@ app.get('/favicon.ico', (req, res) => {
   res.redirect(301, '/icons/favicon.ico');
 });
 
+// Redirect capitalized feature paths (/Video, /Reels, etc.) to canonical lowercase URLs
+const FEATURE_ROUTES = new Set(['video', 'reels', 'story', 'highlights', 'photo', 'audio', 'dp', 'privacy', 'terms']);
+app.use((req, res, next) => {
+  const seg = req.path.replace(/^\/+|\/+$/g, '');
+  if (seg && seg !== seg.toLowerCase() && FEATURE_ROUTES.has(seg.toLowerCase())) {
+    const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+    return res.redirect(301, '/' + seg.toLowerCase() + qs);
+  }
+  next();
+});
+
 // Serve static files from /public with cleanUrls support (.html extension resolution)
 app.use(
   express.static(publicDir, {

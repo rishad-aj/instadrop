@@ -18,6 +18,41 @@
         "source": "/favicon.ico",
         "destination": "/icons/favicon.ico",
         "type": 301
+      },
+      {
+        "source": "/Video",
+        "destination": "/video",
+        "type": 301
+      },
+      {
+        "source": "/Reels",
+        "destination": "/reels",
+        "type": 301
+      },
+      {
+        "source": "/Story",
+        "destination": "/story",
+        "type": 301
+      },
+      {
+        "source": "/Highlights",
+        "destination": "/highlights",
+        "type": 301
+      },
+      {
+        "source": "/Photo",
+        "destination": "/photo",
+        "type": 301
+      },
+      {
+        "source": "/Audio",
+        "destination": "/audio",
+        "type": 301
+      },
+      {
+        "source": "/DP",
+        "destination": "/dp",
+        "type": 301
       }
     ],
 

@@ -1386,13 +1386,28 @@ html[data-theme="dark"] .theme-dd .i-moon { display: none; }
 .app-wrap { max-width: 1280px; margin: 0 auto; padding: 100px 20px 56px; position: relative; z-index: 1; }
 @media (max-width: 640px) { .app-wrap { padding: 88px 16px 40px; } }
 
-/* hero (RippleUI site hero: left text + right showcase card) */
+/* hero (centered hero text on top + download input card directly below) */
 .hero-sec { scroll-margin-top: 76px; }
-.hero-cols { display: grid; grid-template-columns: 1fr; gap: 40px; align-items: start; }
-@media (min-width: 900px) {
-  .hero-cols { grid-template-columns: 1.1fr .9fr; gap: 56px; padding-top: 48px; }
+.hero-cols {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 28px;
+  padding-top: 24px;
 }
-.hero-left { display: flex; flex-direction: column; gap: 20px; max-width: 640px; }
+@media (min-width: 900px) {
+  .hero-cols { gap: 32px; padding-top: 36px; }
+}
+.hero-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 18px;
+  max-width: 780px;
+  margin: 0 auto;
+}
 .hero-badge {
   display: inline-flex; align-items: center; gap: 8px; width: fit-content;
   background: rgb(var(--primary)); color: #fff;
@@ -1401,18 +1416,71 @@ html[data-theme="dark"] .theme-dd .i-moon { display: none; }
 }
 .hero-badge .ic { width: 14px; height: 14px; }
 .hero-left h1 {
-  font-size: clamp(32px, 4.6vw, 56px); font-weight: 700; letter-spacing: -.03em;
-  line-height: 1.06; margin: 0;
+  font-size: clamp(32px, 4.6vw, 54px); font-weight: 700; letter-spacing: -.03em;
+  line-height: 1.08; margin: 0;
 }
 .hero-left h1 .accent { color: rgb(var(--primary)); }
-.hero-sub { color: rgb(var(--content2)); font-size: 16.5px; line-height: 1.65; margin: 0; max-width: 560px; }
-.hero-ctas { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.hero-sub { color: rgb(var(--content2)); font-size: 16.5px; line-height: 1.65; margin: 0 auto; max-width: 640px; }
+.hero-ctas { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: center; }
 
-/* download card */
-.hero-right { display: flex; flex-direction: column; gap: 14px; }
+/* feature switcher pills (Video, Reels, Story, Highlights, Photo, Audio, DP) */
+.feature-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+  width: 100%;
+  max-width: 760px;
+}
+.feature-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 15px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: rgb(var(--content2));
+  background-color: rgb(var(--gray-2));
+  border: 1px solid rgb(var(--gray-6));
+  text-decoration: none;
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease, transform .12s ease;
+  white-space: nowrap;
+}
+.feature-tab .ic { width: 16px; height: 16px; }
+.feature-tab:hover {
+  color: rgb(var(--content1));
+  border-color: rgb(var(--primary));
+  background-color: rgb(var(--gray-3));
+}
+.feature-tab.active {
+  background-color: rgb(var(--primary));
+  border-color: rgb(var(--primary));
+  color: #fff;
+  box-shadow: 0 6px 18px -6px rgb(var(--primary) / .55);
+}
+@media (max-width: 640px) {
+  .feature-tabs { gap: 6px; }
+  .feature-tab { padding: 7px 12px; font-size: 12.5px; }
+  .feature-tab .ic { width: 15px; height: 15px; }
+}
+
+/* download card (centered below hero) */
+.hero-right {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: left;
+}
 .download-card { width: 100%; max-width: none; border: 1px solid rgb(var(--gray-6)); border-radius: 1rem; box-shadow: 0 20px 50px -20px rgba(0,0,0,.25); }
-.download-card .card-body { padding: 22px; }
-.download-card h1 { font-size: 18px; letter-spacing: -.01em; margin: 0 0 14px; font-weight: 600; }
+.download-card .card-body { padding: 24px; }
+@media (max-width: 640px) { .download-card .card-body { padding: 18px; } }
+.download-card h1, .download-card .card-title { font-size: 18px; letter-spacing: -.01em; margin: 0 0 14px; font-weight: 600; color: rgb(var(--content1)); }
 .searchbox { display: flex; gap: 10px; align-items: center; }
 .searchbox .input-wrap { position: relative; flex: 1; min-width: 0; display: flex; }
 .searchbox .input-wrap .input { flex: 1; min-width: 0; max-width: none; transition: border-color .15s ease; }
@@ -1527,7 +1595,7 @@ details.accordion.faq-item {
 .faq-item .accordion-content p { margin: 0; padding: 16px 20px 18px; color: rgb(var(--content2)); font-size: 14px; line-height: 1.65; }
 
 /* results */
-.results { display: flex; flex-direction: column; gap: 18px; scroll-margin-top: 92px; margin-top: 40px; }
+.results { display: flex; flex-direction: column; gap: 18px; scroll-margin-top: 92px; max-width: 720px; width: 100%; margin: 40px auto 0; }
 .result-card { background-color: rgb(var(--gray-3)); border: 1px solid rgb(var(--gray-6)); border-radius: .9rem; padding: 20px; box-shadow: 0 4px 18px rgba(0,0,0,.05); }
 .meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .meta .who { font-size: 13px; font-weight: 600; color: rgb(var(--content1)); }

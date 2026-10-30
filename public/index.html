@@ -39,36 +39,126 @@
   <meta name="twitter:image" content="https://instadrop.web.app/images/og-image.png">
 
   <script type="application/ld+json">
-  [
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "@id": "https://instadrop.web.app/#website",
-      "name": "Instadrop",
-      "alternateName": ["InstaDrop", "instadrop.web.app"],
-      "url": "https://instadrop.web.app/"
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "Instadrop",
-      "alternateName": "InstaDrop",
-      "url": "https://instadrop.web.app/",
-      "isPartOf": { "@id": "https://instadrop.web.app/#website" },
-      "description": "Download Instagram reels, posts, carousels, profile pictures and story highlights in one click. 100% free, ad-free, no login required.",
-      "applicationCategory": "UtilityApplication",
-      "operatingSystem": "Any",
-      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-      "featureList": [
-        "Instagram reels downloader",
-        "Photo and carousel downloader",
-        "Profile picture downloader",
-        "Story highlights downloader",
-        "Extract audio as MP3",
-        "100% free and ad-free"
-      ]
-    }
-  ]
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://instadrop.web.app/#website",
+        "name": "Instadrop",
+        "alternateName": ["InstaDrop", "instadrop.web.app"],
+        "url": "https://instadrop.web.app/"
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://instadrop.web.app/#organization",
+        "name": "Instadrop",
+        "url": "https://instadrop.web.app/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://instadrop.web.app/images/logo.png",
+          "width": 256,
+          "height": 256
+        }
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://instadrop.web.app/#webapp",
+        "name": "Instadrop — Free Instagram Media Downloader",
+        "alternateName": "Instadrop",
+        "url": "https://instadrop.web.app/",
+        "isPartOf": { "@id": "https://instadrop.web.app/#website" },
+        "publisher": { "@id": "https://instadrop.web.app/#organization" },
+        "description": "Download Instagram videos, reels, stories, highlights, photos, carousels, MP3 audio and HD profile pictures (DP) in one click. 100% free, ad-free, no login required.",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "featureList": [
+          "Instagram Video Downloader",
+          "Instagram Reels Downloader",
+          "Instagram Story Saver",
+          "Instagram Highlights Downloader",
+          "Instagram Photo & Carousel Downloader",
+          "Instagram Audio to MP3 Converter",
+          "Instagram Profile Picture (DP) Viewer & Downloader"
+        ]
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://instadrop.web.app/#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Instadrop",
+            "item": "https://instadrop.web.app/"
+          }
+        ]
+      },
+      {
+        "@type": "HowTo",
+        "name": "How to Download Instagram Media with Instadrop",
+        "description": "Download Instagram videos, reels, stories, highlights, photos, MP3 audio and profile pictures in three simple steps.",
+        "step": [
+          {
+            "@type": "HowToStep",
+            "position": 1,
+            "name": "Copy a link",
+            "text": "Grab the URL of the reel, post, carousel, profile or public highlight you want from Instagram."
+          },
+          {
+            "@type": "HowToStep",
+            "position": 2,
+            "name": "Paste & press download",
+            "text": "Drop the link into the box and hit Download. The media is resolved in seconds — no queue, no waiting."
+          },
+          {
+            "@type": "HowToStep",
+            "position": 3,
+            "name": "Save to your device",
+            "text": "Preview the result, tap Download, or grab the audio as MP3. Files land in your downloads at full quality."
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is Instadrop really free?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes — completely. There are no accounts, subscriptions, paywalls or download limits, and there are no ads anywhere on the site. Everything runs in your browser for free."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Are there ads or trackers?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "None at all. Instadrop is 100% ad-free — no banner ads, no popups, no redirects and no tracking scripts. Your links and activity are never collected or sold."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do I need to log in to Instagram?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Instadrop works with public content only and never asks for your credentials. Public reels, posts, profile pictures and highlights work without any login."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Where are my downloads stored?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "On your own device. Media streams directly to your browser and is saved where your browser puts downloads — Instadrop doesn't store anything on any server."
+            }
+          }
+        ]
+      }
+    ]
+  }
   </script>
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/rippleui@1.12.1/dist/css/base.css">
@@ -119,7 +209,7 @@
 
 <nav class="navbar navbar-sticky navbar-glass" id="siteNav">
   <div class="navbar-inner">
-    <a class="app-brand" href="#top">
+    <a class="app-brand" href="./">
       <img class="brand-logo" src="images/logo.png" alt="Instadrop logo" width="34" height="34">
       <img class="brand-wordmark" src="images/brand.png" alt="Instadrop" width="122" height="26">
     </a>
@@ -189,16 +279,21 @@
         <span class="hero-badge"><svg class="ic"><use href="#i-check"/></svg> 100% free &middot; Ad-free &middot; No login &middot; No limits</span>
         <h1><span class="accent">Instadrop</span> Download Instagram media in one click.</h1>
         <p class="hero-sub">Reels, posts, carousels, profile pictures, stories and highlights &mdash; streamed straight to your device at full quality. Completely free and <strong>ad-free</strong>: nothing is stored, ever.</p>
-        <div class="hero-ctas">
-          <button class="btn btn-primary btn-md btn-rounded" id="scrollToCardBtn" type="button"><svg class="ic" style="width:17px;height:17px;"><use href="#i-download"/></svg> Start downloading</button>
-          <a class="btn btn-outline btn-md btn-rounded" href="#how">How it works</a>
-        </div>
-        
+        <nav class="feature-tabs" aria-label="Instagram downloader tools">
+          <a class="feature-tab active" href="./" aria-current="page"><svg class="ic"><use href="#i-sparkles"/></svg> All</a>
+          <a class="feature-tab" href="video"><svg class="ic"><use href="#i-camera"/></svg> Video</a>
+          <a class="feature-tab" href="reels"><svg class="ic"><use href="#i-reel"/></svg> Reels</a>
+          <a class="feature-tab" href="story"><svg class="ic"><use href="#i-clock"/></svg> Story</a>
+          <a class="feature-tab" href="highlights"><svg class="ic"><use href="#i-star"/></svg> Highlights</a>
+          <a class="feature-tab" href="photo"><svg class="ic"><use href="#i-image"/></svg> Photo</a>
+          <a class="feature-tab" href="audio"><svg class="ic"><use href="#i-music"/></svg> Audio</a>
+          <a class="feature-tab" href="dp"><svg class="ic"><use href="#i-user"/></svg> DP</a>
+        </nav>
       </div>
       <div class="hero-right reveal">
         <div class="card download-card">
           <div class="card-body">
-            <h1>Paste your link below</h1>
+            <h2 class="card-title">Paste your link below</h2>
             <div class="searchbox">
               <div class="input-wrap">
                 <input id="urlInput" class="input input-lg" type="text" spellcheck="false" autocomplete="off" aria-label="Paste an Instagram link or username">
@@ -359,10 +454,13 @@
     <div>
       <h2>Features</h2>
       <ul>
-        <li><a href="#downloader">Reel &amp; post downloader</a></li>
-        <li><a href="#downloader">Profile pictures</a></li>
-        <li><a href="#downloader">Story highlights</a></li>
-        <li><a href="#downloader">Extract audio</a></li>
+        <li><a href="video">Video downloader</a></li>
+        <li><a href="reels">Reels downloader</a></li>
+        <li><a href="story">Story saver</a></li>
+        <li><a href="highlights">Story highlights</a></li>
+        <li><a href="photo">Photo &amp; carousel</a></li>
+        <li><a href="audio">Extract audio</a></li>
+        <li><a href="dp">Profile pictures (DP)</a></li>
       </ul>
     </div>
     <div>

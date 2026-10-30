@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instagram Audio Downloader — Convert Reels &amp; Videos to MP3 | Instadrop</title>
+  <meta name="description" content="Extract and download audio from any Instagram Reel or video as a clean MP3 file right in your browser. 100% free, ad-free Instagram to MP3 converter.">
+  <meta name="keywords" content="instagram audio downloader, instagram reel to mp3, download instagram audio mp3, extract audio from instagram reel, ig mp3 converter, instadrop">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="Instadrop">
+  <link rel="canonical" href="https://instadrop.web.app/audio">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#161616">
+  <link rel="icon" type="image/x-icon" href="icons/favicon.ico">
+  <link rel="icon" type="image/png" sizes="256x256" href="images/logo.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-light.png">
+  <link rel="apple-touch-icon" sizes="180x180" media="(prefers-color-scheme: dark)" href="icons/apple-touch-icon-dark.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="Instadrop">
+  <meta name="apple-mobile-web-app-title" content="Instadrop">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Instadrop">
+  <meta property="og:title" content="Instagram Audio Downloader — Convert Reels &amp; Videos to MP3 | Instadrop">
+  <meta property="og:description" content="Extract any Instagram Reel or video soundtrack as a clean MP3 right inside your browser — 100% free, ad-free, no login.">
+  <meta property="og:url" content="https://instadrop.web.app/audio">
+  <meta property="og:image" content="https://instadrop.web.app/images/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Instadrop — Free Instagram Audio to MP3 downloader">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Instagram Audio Downloader — Convert Reels to MP3 | Instadrop">
+  <meta name="twitter:description" content="Extract any Instagram Reel or video soundtrack as a clean MP3 in your browser. Free, ad-free, no login.">
+  <meta name="twitter:image" content="https://instadrop.web.app/images/og-image.png">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://instadrop.web.app/#website",
+        "name": "Instadrop",
+        "alternateName": ["InstaDrop", "instadrop.web.app"],
+        "url": "https://instadrop.web.app/"
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://instadrop.web.app/audio#webapp",
+        "name": "Instadrop Instagram Audio to MP3 Downloader",
+        "url": "https://instadrop.web.app/audio",
+        "isPartOf": { "@id": "https://instadrop.web.app/#website" },
+        "description": "Convert and download any Instagram Reel or video soundtrack into a clean MP3 audio file directly inside your browser.",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Instadrop", "item": "https://instadrop.web.app/" },
+          { "@type": "ListItem", "position": 2, "name": "Instagram Audio to MP3 Downloader", "item": "https://instadrop.web.app/audio" }
+        ]
+      },
+      {
+        "@type": "HowTo",
+        "name": "How to Extract MP3 Audio from an Instagram Reel",
+        "step": [
+          { "@type": "HowToStep", "position": 1, "name": "Copy the Reel or video link", "text": "Open the Instagram Reel or video whose sound you want and tap Share -> Copy Link." },
+          { "@type": "HowToStep", "position": 2, "name": "Paste into Instadrop", "text": "Paste the link into the input box below and click Load Audio." },
+          { "@type": "HowToStep", "position": 3, "name": "Click Audio (MP3)", "text": "Tap the Audio (MP3) button to convert and download the clean MP3 soundtrack directly in your browser." }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How does Instadrop convert Instagram Reels to MP3?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Instadrop uses in-browser WebAssembly audio conversion (FFmpeg.wasm) to extract and encode a clean 128 kbps MP3 directly on your device — your file is never uploaded to any third-party conversion server." }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I download both the MP3 audio and the MP4 video?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. Each video result gives you both a Download (MP4) button and an Audio (MP3) button." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/rippleui@1.12.1/dist/css/base.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/rippleui@1.12.1/dist/css/components.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/styles.css">
+  <script>
+    (function () {
+      var s = localStorage.getItem("instadrop_theme");
+      document.documentElement.setAttribute("data-theme", s || "light");
+    })();
+  </script>
+</head>
+<body data-feature="audio">
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="4"/><circle cx="12" cy="12" r="3.5"/><circle cx="17.2" cy="8.8" r="1"/></symbol>
+  <symbol id="i-reel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4.5"/><path d="M3 8.5h18"/><path d="M8.5 3l2 5.5M14.5 3l2 5.5"/><path d="M10.4 11.8l5 2.9-5 2.9v-5.8z" fill="currentColor"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M4 18l5-5 3 3 4-4 4 4"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="9.5" r="3.2"/><path d="M6.5 19c1.4-2.4 3.3-3.6 5.5-3.6s4.1 1.2 5.5 3.6"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></symbol>
+  <symbol id="i-music" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17.5V5.8l10.5-2V15.5"/><path d="M9 9.5l10.5-2"/><circle cx="6.5" cy="17.8" r="2.5"/><circle cx="17" cy="15.8" r="2.5"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 11l5 5 5-5"/><path d="M4 19h16"/></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3c.6 3.7 2.3 5.4 6 6-3.7.6-5.4 2.3-6 6-.6-3.7-2.3-5.4-6-6 3.7-.6 5.4-2.3 6-6z"/><path d="M18.5 13.5c.3 2 1.2 2.9 3.2 3.2-2 .3-2.9 1.2-3.2 3.2-.3-2-1.2-2.9-3.2-3.2 2-.3 2.9-1.2 3.2-3.2z"/><circle cx="5.5" cy="18.5" r="1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.8L4.8 5.8v5.3c0 5 3.1 9.4 7.2 11.1 4.1-1.7 7.2-6.1 7.2-11.1V5.8L12 2.8z"/><path d="M8.8 12.2l2.2 2.2 4.4-4.4"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></symbol>
+  <symbol id="i-question" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.7 2.2c-.8.4-1.2 1-1.2 1.8v.5"/><circle cx="12" cy="17.3" r=".4"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+  <symbol id="i-display" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+  <symbol id="i-paste" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10.5" rx="3"/><path d="M8 10.5V7.2a4 4 0 0 1 8 0v3.3"/><circle cx="12" cy="15" r="1.2" fill="currentColor" stroke="none"/><path d="M12 16.2v1.8"/></symbol>
+</svg>
+
+<div class="top-wave" aria-hidden="true">
+  <svg viewBox="0 0 1440 750" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M-72 750V-85H1456V750C881.128 570.461 197.803 675.192 -72 750Z"></path>
+  </svg>
+</div>
+
+<nav class="navbar navbar-sticky navbar-glass" id="siteNav">
+  <div class="navbar-inner">
+    <a class="app-brand" href="./">
+      <img class="brand-logo" src="images/logo.png" alt="Instadrop logo" width="34" height="34">
+      <img class="brand-wordmark" src="images/brand.png" alt="Instadrop" width="122" height="26">
+    </a>
+    <div class="navbar-center">
+      <div class="navbar-links">
+        <a class="navbar-item nav-link" href="#downloader">Downloader</a>
+        <a class="navbar-item nav-link" href="#features">Features</a>
+        <a class="navbar-item nav-link" href="#how">How it works</a>
+        <a class="navbar-item nav-link" href="#faq">FAQ</a>
+      </div>
+      <div class="navbar-end">
+        <div class="theme-dd" id="themeDropdown">
+          <label class="dd-btn" tabindex="0" aria-label="Toggle theme" title="Theme">
+            <svg class="ic i-moon"><use href="#i-moon"/></svg>
+            <svg class="ic i-sun"><use href="#i-sun"/></svg>
+          </label>
+          <div class="dd-menu" role="menu">
+            <span class="dd-item" data-theme-choice="light" role="menuitem" tabindex="-1"><svg class="ic"><use href="#i-sun"/></svg> Light</span>
+            <span class="dd-item" data-theme-choice="dark" role="menuitem" tabindex="-1"><svg class="ic"><use href="#i-moon"/></svg> Dark</span>
+            <span class="dd-item" data-theme-choice="system" role="menuitem" tabindex="-1"><svg class="ic"><use href="#i-display"/></svg> System</span>
+          </div>
+        </div>
+        <a class="btn btn-primary btn-sm btn-rounded nav-cta" href="#downloader">Start downloading</a>
+      </div>
+    </div>
+    <button class="hamburger" id="hamburgerBtn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="sideNav">
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+    </button>
+  </div>
+</nav>
+
+<div class="side-overlay" id="sideOverlay" aria-hidden="true"></div>
+<aside class="side-nav" id="sideNav" aria-hidden="true" aria-label="Menu">
+  <nav class="side-links">
+    <a class="side-link nav-link" href="#downloader">Downloader</a>
+    <a class="side-link nav-link" href="#features">Features</a>
+    <a class="side-link nav-link" href="#how">How it works</a>
+    <a class="side-link nav-link" href="#faq">FAQ</a>
+  </nav>
+  <div class="side-theme">
+    <span class="side-label">Theme</span>
+    <div class="side-theme-row">
+      <button class="side-theme-item" data-theme-choice="light" type="button"><svg class="ic"><use href="#i-sun"/></svg> Light</button>
+      <button class="side-theme-item" data-theme-choice="dark" type="button"><svg class="ic"><use href="#i-moon"/></svg> Dark</button>
+      <button class="side-theme-item" data-theme-choice="system" type="button"><svg class="ic"><use href="#i-display"/></svg> System</button>
+    </div>
+  </div>
+  <button class="btn btn-primary btn-md btn-rounded btn-block side-cta" id="installPwaBtn" type="button">
+    <svg class="ic" style="width:17px;height:17px;"><use href="#i-download"/></svg>
+    <span id="installPwaText">Install the app</span>
+  </button>
+</aside>
+
+<div class="app-wrap" id="top">
+  <section class="hero-sec" id="downloader">
+    <div class="hero-cols">
+      <div class="hero-left reveal">
+        <span class="hero-badge"><svg class="ic"><use href="#i-music"/></svg> Reel to MP3 &middot; In-Browser Conversion &middot; Free</span>
+        <h1><span class="accent">Instagram Audio</span> to MP3 Downloader</h1>
+        <p class="hero-sub">Extract any public Instagram Reel or video soundtrack as a clean MP3 file, converted on the fly right inside your browser &mdash; 100% free and <strong>ad-free</strong>.</p>
+        <nav class="feature-tabs" aria-label="Instagram downloader tools">
+          <a class="feature-tab" href="./"><svg class="ic"><use href="#i-sparkles"/></svg> All</a>
+          <a class="feature-tab" href="video"><svg class="ic"><use href="#i-camera"/></svg> Video</a>
+          <a class="feature-tab" href="reels"><svg class="ic"><use href="#i-reel"/></svg> Reels</a>
+          <a class="feature-tab" href="story"><svg class="ic"><use href="#i-clock"/></svg> Story</a>
+          <a class="feature-tab" href="highlights"><svg class="ic"><use href="#i-star"/></svg> Highlights</a>
+          <a class="feature-tab" href="photo"><svg class="ic"><use href="#i-image"/></svg> Photo</a>
+          <a class="feature-tab active" href="audio" aria-current="page"><svg class="ic"><use href="#i-music"/></svg> Audio</a>
+          <a class="feature-tab" href="dp"><svg class="ic"><use href="#i-user"/></svg> DP</a>
+        </nav>
+      </div>
+      <div class="hero-right reveal">
+        <div class="card download-card">
+          <div class="card-body">
+            <h2 class="card-title">Paste your Reel or video link to extract MP3 audio</h2>
+            <div class="searchbox">
+              <div class="input-wrap">
+                <input id="urlInput" class="input input-lg" type="text" spellcheck="false" autocomplete="off" aria-label="Paste an Instagram Reel or video link for MP3 extraction">
+                <span class="ph-scroll" aria-hidden="true">
+                  <span class="ph-marquee"><span class="ph-copy">https://www.instagram.com/reel/example/...</span><span class="ph-copy">https://www.instagram.com/reel/example/...</span></span>
+                </span>
+              </div>
+              <button id="pasteBtn" class="btn btn-outline btn-lg btn-rounded" type="button"><svg class="ic" style="width:18px;height:18px;"><use href="#i-paste"/></svg> Paste</button>
+            </div>
+            <button id="downloadBtn" class="btn btn-primary btn-lg btn-rounded btn-block" type="button"><svg class="ic" style="width:18px;height:18px;"><use href="#i-music"/></svg> Extract Audio</button>
+            <p class="hint">Paste any Instagram Reel or video post link &mdash; then tap <b>Audio (MP3)</b> on the result to convert and save the soundtrack directly to your device.</p>
+            <div class="hist hidden" id="histRow"></div>
+            <div id="spinnerCtn" class="spinner-ctn hidden">
+              <div class="spinner"></div>
+              <span id="spinnerText">Working&hellip;</span>
+            </div>
+            <div id="errorEl" class="alert alert-error hidden"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="results" id="result" aria-live="polite"></div>
+  </section>
+</div>
+
+<section class="band band-secondary" id="stats">
+  <div class="band-inner">
+    <div class="sec-head reveal">
+      <span class="sec-label">In-Browser MP3 Converter</span>
+      <h2>Clean MP3 soundtracks in one tap</h2>
+      <p class="sec-sub">Converted privately on your device using WebAssembly &mdash; no server uploads.</p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-cell reveal"><h3 class="stat-num">MP3</h3><div class="stat-lab">Clean audio format</div></div>
+      <div class="stat-cell reveal"><h3 class="stat-num">0</h3><div class="stat-lab">Server uploads</div></div>
+      <div class="stat-cell reveal"><h3 class="stat-num">0</h3><div class="stat-lab">Ads or popups</div></div>
+      <div class="stat-cell reveal"><h3 class="stat-num">100%</h3><div class="stat-lab">Free forever</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="band band-primary" id="features">
+  <div class="band-inner">
+    <div class="sec-head reveal">
+      <span class="sec-label">Why Instadrop?</span>
+      <h2>Everything an Instagram Audio downloader should be</h2>
+      <p class="sec-sub">Clean, fast and privacy-friendly &mdash; every feature runs right in your browser.</p>
+    </div>
+    <div class="features-grid">
+      <div class="card feature-card reveal">
+        <div class="icon-circle icon-primary"><svg class="ic"><use href="#i-reel"/></svg></div>
+        <h3>Reels &amp; posts</h3>
+        <p>Single videos and photos at original quality &mdash; reels, posts and multi-image carousels, all in one click.</p>
+      </div>
+      <div class="card feature-card reveal">
+        <div class="icon-circle icon-success"><svg class="ic"><use href="#i-shield"/></svg></div>
+        <h3>No login required</h3>
+        <p>Your Instagram account stays yours. Instadrop only ever touches public content, never your credentials.</p>
+      </div>
+      <div class="card feature-card reveal">
+        <div class="icon-circle icon-warning"><svg class="ic"><use href="#i-music"/></svg></div>
+        <h3>Extract audio</h3>
+        <p>Extract any reel's soundtrack as a clean MP3, converted on the fly right inside your browser.</p>
+      </div>
+      <div class="card feature-card reveal">
+        <div class="icon-circle icon-error"><svg class="ic"><use href="#i-user"/></svg></div>
+        <h3>Profile pics &amp; highlights</h3>
+        <p>Grab profile pictures at original size, plus public story highlights, with just a couple of taps.</p>
+      </div>
+      <div class="card feature-card reveal">
+        <div class="icon-circle icon-secondary"><svg class="ic"><use href="#i-sparkles"/></svg></div>
+        <h3>Ad-free experience</h3>
+        <p>Zero ads, zero trackers, zero popups and zero redirects. Just a clean download button &mdash; forever.</p>
+      </div>
+      <div class="card feature-card reveal">
+        <div class="icon-circle icon-info"><svg class="ic"><use href="#i-lock"/></svg></div>
+        <h3>Private by design</h3>
+        <p>Your links and files never leave your device. Nothing is stored on any server &mdash; even your history stays in your browser.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band band-secondary" id="how">
+  <div class="band-inner">
+    <div class="sec-head reveal">
+      <span class="sec-label">How it works</span>
+      <h2>Convert Instagram Reels to MP3 in 3 steps</h2>
+      <p class="sec-sub">Fast, private, and works right inside your browser.</p>
+    </div>
+    <div class="steps-grid">
+      <div class="card step-card reveal">
+        <div class="step-num">1</div>
+        <h3>Copy the Reel link</h3>
+        <p>Find the Instagram Reel or video post whose audio you want and copy its link.</p>
+      </div>
+      <div class="card step-card reveal">
+        <div class="step-num">2</div>
+        <h3>Paste &amp; load media</h3>
+        <p>Paste the link into the box above and tap Extract Audio to resolve the video stream.</p>
+      </div>
+      <div class="card step-card reveal">
+        <div class="step-num">3</div>
+        <h3>Tap Audio (MP3)</h3>
+        <p>Click the Audio (MP3) button under the video preview to convert and save the MP3 file to your downloads.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band band-primary" id="faq">
+  <div class="band-inner">
+    <div class="sec-head reveal">
+      <span class="sec-label">FAQ</span>
+      <h2>Instagram Audio to MP3 FAQ</h2>
+      <p class="sec-sub">Common questions about extracting MP3 audio from Instagram Reels.</p>
+    </div>
+    <div class="faq-wrap">
+      <details class="accordion faq-item reveal">
+        <summary class="accordion-title">How is the MP3 converted inside my browser?<svg class="ic faq-chevron"><use href="#i-chevron"/></svg></summary>
+        <div class="accordion-content"><p>Instadrop loads a lightweight WebAssembly audio encoder the first time you tap <strong>Audio (MP3)</strong> and converts the video's audio stream into a standard MP3 file directly on your device.</p></div>
+      </details>
+      <details class="accordion faq-item reveal">
+        <summary class="accordion-title">Does it work on mobile phones as well as desktop?<svg class="ic faq-chevron"><use href="#i-chevron"/></svg></summary>
+        <div class="accordion-content"><p>Yes &mdash; modern Android, iOS, macOS and Windows browsers all support in-browser MP3 extraction on Instadrop.</p></div>
+      </details>
+      <details class="accordion faq-item reveal">
+        <summary class="accordion-title">Is there any quality loss when extracting audio?<svg class="ic faq-chevron"><use href="#i-chevron"/></svg></summary>
+        <div class="accordion-content"><p>Instadrop extracts the audio directly from the original Instagram MP4 stream and encodes a clean 44.1 kHz stereo MP3 file.</p></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="footer-grid reveal">
+    <div>
+      <div class="foot-brand"><img class="brand-logo" src="images/logo.png" alt="Instadrop logo" width="34" height="34"> <img class="brand-wordmark" src="images/brand.png" alt="Instadrop" width="122" height="26"></div>
+      <p>A privacy-friendly, <strong>ad-free</strong> Instagram media downloader. Your links and files stay on your device &mdash; nothing is stored by the tool.</p>
+    </div>
+    <div>
+      <h2>Features</h2>
+      <ul>
+        <li><a href="video">Video downloader</a></li>
+        <li><a href="reels">Reels downloader</a></li>
+        <li><a href="story">Story saver</a></li>
+        <li><a href="highlights">Story highlights</a></li>
+        <li><a href="photo">Photo &amp; carousel</a></li>
+        <li><a href="audio">Extract audio</a></li>
+        <li><a href="dp">Profile pictures (DP)</a></li>
+      </ul>
+    </div>
+    <div>
+      <h2>Help</h2>
+      <ul>
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="https://t.me/Instadrop_tgbot?start=start" target="_blank" rel="noopener">Telegram bot</a></li>
+      </ul>
+    </div>
+    <div>
+      <h2>Legal</h2>
+      <ul>
+        <li><a href="terms">Terms &amp; Conditions</a></li>
+        <li><a href="privacy">Privacy Policy</a></li>
+        <li><a href="#faq">Respect creators' rights</a></li>
+        <li><a href="#faq">Personal use only</a></li>
+        <li><a href="#faq">Not affiliated with Meta</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-gradient">
+    <div class="footer-legal">
+      <p>© <span class="js-year">2026</span> Instadrop. All rights reserved. <a href="terms">Terms &amp; Conditions</a> and <a href="privacy">Privacy Policy</a>.</p>
+    </div>
+    <div class="footer-wordmark" aria-hidden="true">
+      <img src="images/wordmark.svg" alt="">
+    </div>
+  </div>
+</footer>
+<script>try{document.querySelectorAll(".js-year").forEach(function(el){el.textContent=new Date().getFullYear();});}catch(e){}</script>
+<script src="js/script.js"></script>
+</body>
+</html>
