@@ -1,6 +1,6 @@
-/* Instadrop service worker v16 — install + offline cache + widgets + share_target.
+/* Instadrop service worker v17 — install + offline cache + widgets + share_target.
    Drop-in replacement for public/sw.js. Bump CACHE on every release. */
-var CACHE = "instadrop-v16";
+var CACHE = "instadrop-v17";
 var CORE = [
   "/", "/index.html", "/widget.html", "/privacy.html", "/terms.html", "/404.html",
   "/css/styles.css", "/css/legal.css", "/js/script.js",

@@ -18,6 +18,7 @@
   <link rel="apple-touch-icon" sizes="180x180" media="(prefers-color-scheme: dark)" href="icons/apple-touch-icon-dark.png">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="Instadrop">
   <meta name="apple-mobile-web-app-title" content="Instadrop">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.webmanifest">
@@ -38,24 +39,36 @@
   <meta name="twitter:image" content="https://instadrop.web.app/images/og-image.png">
 
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "Instadrop",
-    "url": "https://instadrop.web.app/",
-    "description": "Download Instagram reels, posts, carousels, profile pictures and story highlights in one click. 100% free, ad-free, no login required.",
-    "applicationCategory": "UtilityApplication",
-    "operatingSystem": "Any",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-    "featureList": [
-      "Instagram reels downloader",
-      "Photo and carousel downloader",
-      "Profile picture downloader",
-      "Story highlights downloader",
-      "Audio to MP3 converter",
-      "100% free and ad-free"
-    ]
-  }
+  [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "@id": "https://instadrop.web.app/#website",
+      "name": "Instadrop",
+      "alternateName": ["InstaDrop", "instadrop.web.app"],
+      "url": "https://instadrop.web.app/"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Instadrop",
+      "alternateName": "InstaDrop",
+      "url": "https://instadrop.web.app/",
+      "isPartOf": { "@id": "https://instadrop.web.app/#website" },
+      "description": "Download Instagram reels, posts, carousels, profile pictures and story highlights in one click. 100% free, ad-free, no login required.",
+      "applicationCategory": "UtilityApplication",
+      "operatingSystem": "Any",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "featureList": [
+        "Instagram reels downloader",
+        "Photo and carousel downloader",
+        "Profile picture downloader",
+        "Story highlights downloader",
+        "Extract audio as MP3",
+        "100% free and ad-free"
+      ]
+    }
+  ]
   </script>
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/rippleui@1.12.1/dist/css/base.css">
