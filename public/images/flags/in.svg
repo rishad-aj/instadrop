@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480">
+  <rect width="640" height="160" y="0" fill="#ff9933"/>
+  <rect width="640" height="160" y="160" fill="#ffffff"/>
+  <rect width="640" height="160" y="320" fill="#138808"/>
+  <g transform="translate(320, 240)">
+    <circle r="52" fill="none" stroke="#000080" stroke-width="4.5"/>
+    <circle r="10" fill="#000080"/>
+    <!-- 24 spokes -->
+    <g stroke="#000080" stroke-width="2.5">
+      <line y1="-50" y2="50"/>
+      <line x1="-50" x2="50"/>
+      <line y1="-50" y2="50" transform="rotate(15)"/>
+      <line x1="-50" x2="50" transform="rotate(15)"/>
+      <line y1="-50" y2="50" transform="rotate(30)"/>
+      <line x1="-50" x2="50" transform="rotate(30)"/>
+      <line y1="-50" y2="50" transform="rotate(45)"/>
+      <line x1="-50" x2="50" transform="rotate(45)"/>
+      <line y1="-50" y2="50" transform="rotate(60)"/>
+      <line x1="-50" x2="50" transform="rotate(60)"/>
+      <line y1="-50" y2="50" transform="rotate(75)"/>
+      <line x1="-50" x2="50" transform="rotate(75)"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480">
+  <!-- Pan-Arab Flag: Official symbol of the Arabic language -->
+  <rect width="640" height="160" y="0" fill="#000000"/>
+  <rect width="640" height="160" y="160" fill="#ffffff"/>
+  <rect width="640" height="160" y="320" fill="#007a3d"/>
+  <polygon points="0,0 240,240 0,480" fill="#ce1126"/>
+</svg>

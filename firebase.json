@@ -53,7 +53,70 @@
         "source": "/DP",
         "destination": "/dp",
         "type": 301
+      },
+      {
+        "source": "/post",
+        "destination": "/photo",
+        "type": 301
+      },
+      {
+        "source": "/Post",
+        "destination": "/photo",
+        "type": 301
+      },
+      {
+        "source": "/psot",
+        "destination": "/photo",
+        "type": 301
+      },
+      {
+        "source": "/Psot",
+        "destination": "/photo",
+        "type": 301
+      },
+      {
+        "source": "/videos",
+        "destination": "/video",
+        "type": 301
+      },
+      {
+        "source": "/Videos",
+        "destination": "/video",
+        "type": 301
+      },
+      {
+        "source": "/photos",
+        "destination": "/photo",
+        "type": 301
+      },
+      {
+        "source": "/Photos",
+        "destination": "/photo",
+        "type": 301
+      },
+      {
+        "source": "/stories",
+        "destination": "/story",
+        "type": 301
+      },
+      {
+        "source": "/Stories",
+        "destination": "/story",
+        "type": 301
       }
+    ],
+
+    "rewrites": [
+      { "source": "/@(en|es|pt|id|fr|de|tr|ar|hi)", "destination": "/index.html" },
+      { "source": "/@(en|es|pt|id|fr|de|tr|ar|hi)/photo", "destination": "/photo.html" },
+      { "source": "/@(en|es|pt|id|fr|de|tr|ar|hi)/video", "destination": "/video.html" },
+      { "source": "/@(en|es|pt|id|fr|de|tr|ar|hi)/reels", "destination": "/reels.html" },
+      { "source": "/@(en|es|pt|id|fr|de|tr|ar|hi)/story", "destination": "/story.html" },
+      { "source": "/@(en|es|pt|id|fr|de|tr|ar|hi)/highlights", "destination": "/highlights.html" },
+      { "source": "/@(en|es|pt|id|fr|de|tr|ar|hi)/audio", "destination": "/audio.html" },
+      { "source": "/@(en|es|pt|id|fr|de|tr|ar|hi)/dp", "destination": "/dp.html" },
+      { "source": "/@(en|es|pt|id|fr|de|tr|ar|hi)/privacy", "destination": "/privacy.html" },
+      { "source": "/@(en|es|pt|id|fr|de|tr|ar|hi)/terms", "destination": "/terms.html" }
     ],
 
     "headers": [

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480">
+  <g fill-rule="evenodd">
+    <path fill="#bd3d44" d="M0 0h640v480H0z"/>
+    <path stroke="#fff" stroke-width="37" d="M0 55.5h640M0 129h640M0 203h640M0 277h640M0 351h640M0 424.5h640"/>
+    <path fill="#192f5d" d="M0 0h256v258.5H0z"/>
+    <g fill="#fff">
+      <g id="s18">
+        <g id="s6">
+          <g id="s3">
+            <g id="s">
+              <polygon points="12.8 4 15.2 11.6 23.2 11.6 16.7 16.3 19.2 23.8 12.8 19.1 6.4 23.8 8.8 16.3 2.4 11.6 10.4 11.6"/>
+            </g>
+            <use href="#s" x="42.6"/>
+            <use href="#s" x="85.3"/>
+          </g>
+          <use href="#s3" x="128"/>
+        </g>
+        <use href="#s6" x="21.3" y="21.5"/>
+        <use href="#s6" y="43.1"/>
+      </g>
+      <use href="#s18" y="86.2"/>
+      <use href="#s6" y="172.3"/>
+      <use href="#s6" x="21.3" y="193.8"/>
+      <use href="#s6" y="215.4"/>
+    </g>
+  </g>
+</svg>

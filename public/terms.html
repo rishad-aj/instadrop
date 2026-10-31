@@ -106,6 +106,24 @@
         <a class="navbar-item nav-link" href="./#faq">FAQ</a>
       </div>
       <div class="navbar-end">
+        <div class="lang-dd" id="langDropdown">
+          <button class="lang-btn" type="button" aria-label="Select language" title="Select language">
+            <img class="lang-flag-img" id="currentLangFlag" src="/images/flags/us.svg" alt="English" width="19" height="14">
+            <span class="lang-code" id="currentLangLabel">EN</span>
+            <svg class="ic ic-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="dd-menu lang-menu" role="menu">
+            <button class="dd-item lang-item" data-lang="en" role="menuitem" type="button"><img class="lang-flag-img" src="/images/flags/us.svg" alt="" width="20" height="15"> English</button>
+            <button class="dd-item lang-item" data-lang="es" role="menuitem" type="button"><img class="lang-flag-img" src="/images/flags/es.svg" alt="" width="20" height="15"> Español</button>
+            <button class="dd-item lang-item" data-lang="pt" role="menuitem" type="button"><img class="lang-flag-img" src="/images/flags/br.svg" alt="" width="20" height="15"> Português</button>
+            <button class="dd-item lang-item" data-lang="id" role="menuitem" type="button"><img class="lang-flag-img" src="/images/flags/id.svg" alt="" width="20" height="15"> Bahasa Indonesia</button>
+            <button class="dd-item lang-item" data-lang="fr" role="menuitem" type="button"><img class="lang-flag-img" src="/images/flags/fr.svg" alt="" width="20" height="15"> Français</button>
+            <button class="dd-item lang-item" data-lang="de" role="menuitem" type="button"><img class="lang-flag-img" src="/images/flags/de.svg" alt="" width="20" height="15"> Deutsch</button>
+            <button class="dd-item lang-item" data-lang="tr" role="menuitem" type="button"><img class="lang-flag-img" src="/images/flags/tr.svg" alt="" width="20" height="15"> Türkçe</button>
+            <button class="dd-item lang-item" data-lang="ar" role="menuitem" type="button"><img class="lang-flag-img" src="/images/flags/ar.svg" alt="" width="20" height="15"> العربية</button>
+            <button class="dd-item lang-item" data-lang="hi" role="menuitem" type="button"><img class="lang-flag-img" src="/images/flags/in.svg" alt="" width="20" height="15"> हिन्दी</button>
+          </div>
+        </div>
         <div class="theme-dd" id="themeDropdown">
           <label class="dd-btn" tabindex="0" aria-label="Toggle theme" title="Theme">
             <svg class="ic i-moon"><use href="#i-moon"/></svg>
@@ -134,12 +152,18 @@
     <a class="side-link nav-link" href="./#how">How it works</a>
     <a class="side-link nav-link" href="./#faq">FAQ</a>
   </nav>
-  <div class="side-theme">
-    <span class="side-label">Theme</span>
-    <div class="side-theme-row">
-      <button class="side-theme-item" data-theme-choice="light" type="button"><svg class="ic"><use href="#i-sun"/></svg> Light</button>
-      <button class="side-theme-item" data-theme-choice="dark" type="button"><svg class="ic"><use href="#i-moon"/></svg> Dark</button>
-      <button class="side-theme-item" data-theme-choice="system" type="button"><svg class="ic"><use href="#i-display"/></svg> System</button>
+  <div class="side-lang">
+    <span class="side-label">Language</span>
+    <div class="side-lang-grid">
+      <button class="side-lang-item" data-lang="en" type="button"><img class="lang-flag-img" src="/images/flags/us.svg" alt="" width="18" height="13.5"> English</button>
+      <button class="side-lang-item" data-lang="es" type="button"><img class="lang-flag-img" src="/images/flags/es.svg" alt="" width="18" height="13.5"> Español</button>
+      <button class="side-lang-item" data-lang="pt" type="button"><img class="lang-flag-img" src="/images/flags/br.svg" alt="" width="18" height="13.5"> Português</button>
+      <button class="side-lang-item" data-lang="id" type="button"><img class="lang-flag-img" src="/images/flags/id.svg" alt="" width="18" height="13.5"> Bahasa</button>
+      <button class="side-lang-item" data-lang="fr" type="button"><img class="lang-flag-img" src="/images/flags/fr.svg" alt="" width="18" height="13.5"> Français</button>
+      <button class="side-lang-item" data-lang="de" type="button"><img class="lang-flag-img" src="/images/flags/de.svg" alt="" width="18" height="13.5"> Deutsch</button>
+      <button class="side-lang-item" data-lang="tr" type="button"><img class="lang-flag-img" src="/images/flags/tr.svg" alt="" width="18" height="13.5"> Türkçe</button>
+      <button class="side-lang-item" data-lang="ar" type="button"><img class="lang-flag-img" src="/images/flags/ar.svg" alt="" width="18" height="13.5"> العربية</button>
+      <button class="side-lang-item" data-lang="hi" type="button"><img class="lang-flag-img" src="/images/flags/in.svg" alt="" width="18" height="13.5"> हिन्दी</button>
     </div>
   </div>
   <button class="btn btn-primary btn-md btn-rounded btn-block side-cta" id="installPwaBtn" type="button">

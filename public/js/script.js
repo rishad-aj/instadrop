@@ -180,6 +180,398 @@ function initThemes() {
 }
 initThemes();
 
+/* ---------------- internationalization (i18n) ---------------- */
+const I18N_DICT = {
+  en: {
+    nav_downloader: "Downloader",
+    nav_features: "Features",
+    nav_how: "How it works",
+    nav_faq: "FAQ",
+    nav_cta: "Start downloading",
+    hero_badge: "100% free · Ad-free · No login · No limits",
+    tab_photo: "Photo",
+    tab_video: "Video",
+    tab_reels: "Reels",
+    tab_story: "Story",
+    tab_highlights: "Highlights",
+    tab_audio: "Audio",
+    tab_dp: "DP",
+    card_title: "Paste your link below",
+    paste_btn: "Paste",
+    download_btn: "Download",
+    hero_sub: "Reels, posts, carousels, profile pictures, stories and highlights — streamed straight to your device at full quality. Completely free and ad-free: nothing is stored, ever.",
+    hint: "Works with reels, posts, carousels, profile pages, and both stories and highlights — with or without the username segment (e.g. instagram.com/name/p/…). Paste any Instagram link or a bare @username.",
+    install_app: "Install the app",
+    sec_features_label: "Features",
+    sec_features_title: "Built for speed, clarity and complete privacy",
+    sec_how_label: "Simple workflow",
+    sec_how_title: "Three steps. Zero clutter.",
+    sec_faq_label: "Got questions?",
+    sec_faq_title: "Frequently Asked Questions",
+    ph_text: "https://www.instagram.com/example/... or @username",
+  },
+  es: {
+    nav_downloader: "Descargador",
+    nav_features: "Características",
+    nav_how: "Cómo funciona",
+    nav_faq: "Preguntas",
+    nav_cta: "Empezar a descargar",
+    hero_badge: "100% gratis · Sin anuncios · Sin registro · Sin límites",
+    tab_photo: "Foto",
+    tab_video: "Vídeo",
+    tab_reels: "Reels",
+    tab_story: "Historia",
+    tab_highlights: "Destacadas",
+    tab_audio: "Audio",
+    tab_dp: "Perfil (DP)",
+    card_title: "Pega tu enlace abajo",
+    paste_btn: "Pegar",
+    download_btn: "Descargar",
+    hero_sub: "Reels, publicaciones, carruseles, fotos de perfil, historias y destacadas — descargados en alta calidad. Totalmente gratis y sin anuncios: no se guarda nada, jamás.",
+    hint: "Funciona con reels, publicaciones, carruseles, perfiles, historias y destacadas. Pega cualquier enlace de Instagram o un @usuario.",
+    install_app: "Instalar aplicación",
+    sec_features_label: "Características",
+    sec_features_title: "Diseñado para rapidez, claridad y total privacidad",
+    sec_how_label: "Flujo simple",
+    sec_how_title: "Tres pasos. Cero complicaciones.",
+    sec_faq_label: "¿Preguntas?",
+    sec_faq_title: "Preguntas Frecuentes",
+    ph_text: "https://www.instagram.com/ejemplo/... o @usuario",
+  },
+  pt: {
+    nav_downloader: "Baixar",
+    nav_features: "Recursos",
+    nav_how: "Como funciona",
+    nav_faq: "Perguntas",
+    nav_cta: "Começar a baixar",
+    hero_badge: "100% grátis · Sem anúncios · Sem login · Sem limites",
+    tab_photo: "Foto",
+    tab_video: "Vídeo",
+    tab_reels: "Reels",
+    tab_story: "Story",
+    tab_highlights: "Destaques",
+    tab_audio: "Áudio",
+    tab_dp: "Perfil (DP)",
+    card_title: "Cole seu link abaixo",
+    paste_btn: "Colar",
+    download_btn: "Baixar",
+    hero_sub: "Reels, posts, carrosséis, fotos de perfil, stories e destaques — direto para o seu aparelho em qualidade máxima. 100% grátis e sem anúncios.",
+    hint: "Funciona com reels, posts, carrosséis, perfis, stories e destaques. Cole qualquer link do Instagram ou um @usuário.",
+    install_app: "Instalar aplicativo",
+    sec_features_label: "Recursos",
+    sec_features_title: "Feito para velocidade, clareza e total privacidade",
+    sec_how_label: "Fluxo simples",
+    sec_how_title: "Três etapas. Sem enrolação.",
+    sec_faq_label: "Dúvidas?",
+    sec_faq_title: "Perguntas Frequentes",
+    ph_text: "https://www.instagram.com/exemplo/... ou @usuario",
+  },
+  id: {
+    nav_downloader: "Pengunduh",
+    nav_features: "Fitur",
+    nav_how: "Cara kerja",
+    nav_faq: "FAQ",
+    nav_cta: "Mulai mengunduh",
+    hero_badge: "100% gratis · Tanpa iklan · Tanpa login · Tanpa batas",
+    tab_photo: "Foto",
+    tab_video: "Video",
+    tab_reels: "Reels",
+    tab_story: "Story",
+    tab_highlights: "Sorotan",
+    tab_audio: "Audio",
+    tab_dp: "Profil (DP)",
+    card_title: "Tempelkan tautan Anda di bawah",
+    paste_btn: "Tempel",
+    download_btn: "Unduh",
+    hero_sub: "Reels, postingan, carousel, foto profil, story dan sorotan — diunduh dalam kualitas penuh. Gratis dan bebas iklan: tidak ada yang disimpan.",
+    hint: "Bekerja dengan reels, postingan, carousel, profil, stories dan sorotan. Tempelkan tautan Instagram apa pun atau @username.",
+    install_app: "Pasang aplikasi",
+    sec_features_label: "Fitur",
+    sec_features_title: "Dibuat untuk kecepatan, kejelasan dan privasi total",
+    sec_how_label: "Alur mudah",
+    sec_how_title: "Tiga langkah mudah.",
+    sec_faq_label: "Pertanyaan?",
+    sec_faq_title: "Pertanyaan yang Sering Diajukan",
+    ph_text: "https://www.instagram.com/contoh/... atau @username",
+  },
+  fr: {
+    nav_downloader: "Téléchargeur",
+    nav_features: "Fonctionnalités",
+    nav_how: "Comment ça marche",
+    nav_faq: "FAQ",
+    nav_cta: "Commencer",
+    hero_badge: "100% gratuit · Sans pub · Sans connexion · Illimité",
+    tab_photo: "Photo",
+    tab_video: "Vidéo",
+    tab_reels: "Reels",
+    tab_story: "Story",
+    tab_highlights: "Highlights",
+    tab_audio: "Audio",
+    tab_dp: "Profil (DP)",
+    card_title: "Collez votre lien ci-dessous",
+    paste_btn: "Coller",
+    download_btn: "Télécharger",
+    hero_sub: "Reels, publications, carrousels, photos de profil, stories et highlights — téléchargés en qualité maximale. Totalement gratuit et sans publicité.",
+    hint: "Compatible avec reels, publications, carrousels, profils, stories et highlights. Collez n'importe quel lien Instagram ou @nom d'utilisateur.",
+    install_app: "Installer l'appli",
+    sec_features_label: "Fonctionnalités",
+    sec_features_title: "Conçu pour la vitesse, la simplicité et la confidentialité",
+    sec_how_label: "Processus simple",
+    sec_how_title: "Trois étapes faciles.",
+    sec_faq_label: "Questions ?",
+    sec_faq_title: "Foire Aux Questions",
+    ph_text: "https://www.instagram.com/exemple/... ou @nom",
+  },
+  de: {
+    nav_downloader: "Downloader",
+    nav_features: "Funktionen",
+    nav_how: "So funktioniert's",
+    nav_faq: "FAQ",
+    nav_cta: "Jetzt herunterladen",
+    hero_badge: "100% kostenlos · Werbefrei · Ohne Login · Unbegrenzt",
+    tab_photo: "Foto",
+    tab_video: "Video",
+    tab_reels: "Reels",
+    tab_story: "Story",
+    tab_highlights: "Highlights",
+    tab_audio: "Audio",
+    tab_dp: "Profil (DP)",
+    card_title: "Fügen Sie Ihren Link unten ein",
+    paste_btn: "Einfügen",
+    download_btn: "Herunterladen",
+    hero_sub: "Reels, Beiträge, Karussells, Profilbilder, Stories und Highlights — in voller Originalqualität. Vollkommen kostenlos und werbefrei: nichts wird gespeichert.",
+    hint: "Unterstützt Reels, Beiträge, Karussells, Profilseiten, Stories und Highlights. Fügen Sie einen Instagram-Link oder @Benutzernamen ein.",
+    install_app: "App installieren",
+    sec_features_label: "Funktionen",
+    sec_features_title: "Schnell, einfach und mit vollem Datenschutz",
+    sec_how_label: "Einfacher Ablauf",
+    sec_how_title: "Drei einfache Schritte.",
+    sec_faq_label: "Fragen?",
+    sec_faq_title: "Häufig gestellte Fragen",
+    ph_text: "https://www.instagram.com/beispiel/... oder @benutzer",
+  },
+  tr: {
+    nav_downloader: "İndirici",
+    nav_features: "Özellikler",
+    nav_how: "Nasıl Çalışır",
+    nav_faq: "SSS",
+    nav_cta: "İndirmeye başla",
+    hero_badge: "%100 ücretsiz · Reklamsız · Giriş yok · Limitsiz",
+    tab_photo: "Fotoğraf",
+    tab_video: "Video",
+    tab_reels: "Reels",
+    tab_story: "Hikaye",
+    tab_highlights: "Öne Çıkanlar",
+    tab_audio: "Ses",
+    tab_dp: "Profil (DP)",
+    card_title: "Bağlantınızı aşağıya yapıştırın",
+    paste_btn: "Yapıştır",
+    download_btn: "İndir",
+    hero_sub: "Reels, gönderiler, kaydırmalı postlar, profil resimleri, hikayeler ve öne çıkanlar — tam kalitede cihazınıza aktarılır. Tamamen ücretsiz ve reklamsız.",
+    hint: "Reels, gönderiler, kaydırmalı gönderiler, profiller, hikayeler ve öne çıkanlar ile çalışır. Herhangi bir Instagram bağlantısını veya @kullanıcıadını yapıştırın.",
+    install_app: "Uygulamayı yükle",
+    sec_features_label: "Özellikler",
+    sec_features_title: "Hız, netlik ve tam gizlilik için geliştirildi",
+    sec_how_label: "Kolay Akış",
+    sec_how_title: "Üç basit adım.",
+    sec_faq_label: "Sorular?",
+    sec_faq_title: "Sıkça Sorulan Sorular",
+    ph_text: "https://www.instagram.com/ornek/... veya @kullanici",
+  },
+  ar: {
+    nav_downloader: "أداة التنزيل",
+    nav_features: "المميزات",
+    nav_how: "كيف يعمل",
+    nav_faq: "الأسئلة الشائعة",
+    nav_cta: "ابدأ التنزيل",
+    hero_badge: "مجاني 100% · بدون إعلانات · بدون تسجيل · بلا حدود",
+    tab_photo: "صور",
+    tab_video: "فيديو",
+    tab_reels: "ريلز",
+    tab_story: "ستوري",
+    tab_highlights: "هايلايت",
+    tab_audio: "صوت",
+    tab_dp: "صورة الحساب",
+    card_title: "الصق الرابط أدناه",
+    paste_btn: "لصق",
+    download_btn: "تنزيل",
+    hero_sub: "ريلز، منشورات، صور مجمعة، صور الملف الشخصي، ستوريات وهايلايت — بجودة أصلية كاملة مباشرة على جهازك. مجاني وبدون إعلانات تماماً.",
+    hint: "يدعم الريلز والمنشورات والصور والملفات الشخصية والقصص والهايلايت. الصق أي رابط أو اسم مستخدم @username.",
+    install_app: "تثبيت التطبيق",
+    sec_features_label: "المميزات",
+    sec_features_title: "مبني للسرعة والوضوح والخصوصية الكاملة",
+    sec_how_label: "خطوات بسيطة",
+    sec_how_title: "ثلاث خطوات فقط دون أي تعقيد.",
+    sec_faq_label: "أسئلة شائعة؟",
+    sec_faq_title: "الأسئلة الأكثر تكراراً",
+    ph_text: "https://www.instagram.com/example/... أو @username",
+  },
+  hi: {
+    nav_downloader: "डाउनलोडर",
+    nav_features: "विशेषताएं",
+    nav_how: "यह कैसे काम करता है",
+    nav_faq: "अक्सर पूछे जाने वाले सवाल",
+    nav_cta: "डाउनलोड शुरू करें",
+    hero_badge: "100% मुफ्त · विज्ञापन-मुक्त · बिना लॉगिन · असीमित",
+    tab_photo: "फोटो",
+    tab_video: "वीडियो",
+    tab_reels: "रील्स",
+    tab_story: "स्टोरी",
+    tab_highlights: "हाइलाइट्स",
+    tab_audio: "ऑडियो",
+    tab_dp: "प्रोफ़ाइल फ़ोटो",
+    card_title: "अपना इंस्टाग्राम लिंक नीचे पेस्ट करें",
+    paste_btn: "पेस्ट करें",
+    download_btn: "डाउनलोड करें",
+    hero_sub: "रील्स, पोस्ट, कैरूसेल, प्रोफ़ाइल फ़ोटो, स्टोरीज़ और हाइलाइट्स — सीधे आपके डिवाइस पर पूरी गुणवत्ता में। पूरी तरह से मुफ़्त और विज्ञापन-मुक्त: कुछ भी कभी सेव नहीं किया जाता।",
+    hint: "रील्स, पोस्ट, कैरूसेल, प्रोफ़ाइल पेज, स्टोरीज़ और हाइलाइट्स के साथ काम करता है। कोई भी इंस्टाग्राम लिंक या @यूज़रनेम पेस्ट करें।",
+    install_app: "ऐप इंस्टॉल करें",
+    sec_features_label: "विशेषताएं",
+    sec_features_title: "गति, स्पष्टता और पूर्ण गोपनीयता के लिए निर्मित",
+    sec_how_label: "सरल प्रक्रिया",
+    sec_how_title: "तीन आसान चरण। कोई झंझट नहीं।",
+    sec_faq_label: "कोई सवाल?",
+    sec_faq_title: "अक्सर पूछे जाने वाले प्रश्न",
+    ph_text: "https://www.instagram.com/example/... या @username",
+  },
+};
+
+const I18N_LANGS = {
+  en: { name: "English", flag: "/images/flags/us.svg" },
+  es: { name: "Español", flag: "/images/flags/es.svg" },
+  pt: { name: "Português", flag: "/images/flags/br.svg" },
+  id: { name: "Bahasa Indonesia", flag: "/images/flags/id.svg" },
+  fr: { name: "Français", flag: "/images/flags/fr.svg" },
+  de: { name: "Deutsch", flag: "/images/flags/de.svg" },
+  tr: { name: "Türkçe", flag: "/images/flags/tr.svg" },
+  ar: { name: "العربية", flag: "/images/flags/ar.svg" },
+  hi: { name: "हिन्दी", flag: "/images/flags/in.svg" }
+};
+
+function currentLanguage() {
+  // Check URL pathname first: e.g. /en/photo, /hi, /es/video
+  const segs = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
+  if (segs.length > 0 && I18N_DICT[segs[0].toLowerCase()]) {
+    return segs[0].toLowerCase();
+  }
+  // Check localStorage
+  try {
+    const saved = localStorage.getItem("instadrop_lang");
+    if (saved && I18N_DICT[saved]) return saved;
+  } catch (e) {}
+  return "en";
+}
+
+function updateNavigationLinks(lang) {
+  // Update feature tabs to route with /:lang/:feature
+  const tabs = document.querySelectorAll(".feature-tabs .feature-tab");
+  for (const tab of tabs) {
+    const href = tab.getAttribute("href") || "";
+    const clean = href.replace(/^.*?([^/]+)$/, '$1').replace(/\.html$/, '');
+    if (clean && !clean.startsWith('#')) {
+      tab.setAttribute("href", '/' + lang + '/' + clean);
+    }
+  }
+  // Update brand link
+  const brand = document.querySelector(".app-brand");
+  if (brand) brand.setAttribute("href", '/' + lang);
+}
+
+function updateLanguageUrl(lang) {
+  const pathname = window.location.pathname.replace(/^\/+|\/+$/g, '');
+  const segs = pathname ? pathname.split('/').filter(Boolean) : [];
+  let feature = "";
+  if (segs.length > 0 && I18N_DICT[segs[0].toLowerCase()]) {
+    feature = segs.slice(1).join('/');
+  } else if (segs.length > 0) {
+    feature = segs.join('/');
+  }
+  feature = feature.replace(/\.html$/, '');
+  const newPath = '/' + lang + (feature ? '/' + feature : '');
+  const search = window.location.search || '';
+  const hash = window.location.hash || '';
+  if (window.location.pathname !== newPath) {
+    try {
+      history.pushState({ lang, feature }, '', newPath + search + hash);
+    } catch (e) {}
+  }
+  updateNavigationLinks(lang);
+}
+
+function applyLanguage(lang) {
+  if (!I18N_DICT[lang]) lang = "en";
+  const dict = I18N_DICT[lang];
+  document.documentElement.setAttribute("lang", lang);
+  document.documentElement.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
+
+  const labelEl = document.getElementById("currentLangLabel");
+  if (labelEl) labelEl.textContent = lang.toUpperCase();
+
+  const flagEl = document.getElementById("currentLangFlag");
+  if (flagEl && I18N_LANGS[lang]) {
+    flagEl.src = I18N_LANGS[lang].flag;
+    flagEl.alt = I18N_LANGS[lang].name;
+  }
+
+  // update all [data-i18n] nodes
+  const nodes = document.querySelectorAll("[data-i18n]");
+  for (const el of nodes) {
+    const k = el.getAttribute("data-i18n");
+    if (dict[k]) {
+      const svg = el.querySelector("svg");
+      if (svg) {
+        const cloneSvg = svg.cloneNode(true);
+        el.textContent = " " + dict[k];
+        el.prepend(cloneSvg);
+      } else {
+        el.textContent = dict[k];
+      }
+    }
+  }
+
+  // update placeholder text if present
+  const phCopies = document.querySelectorAll(".ph-copy");
+  if (phCopies.length && dict.ph_text) {
+    for (const p of phCopies) p.textContent = dict.ph_text;
+  }
+
+  // update active class in dropdowns & side-menu
+  const items = document.querySelectorAll(".lang-dd .lang-item, .side-lang-item");
+  for (const it of items) {
+    it.classList.toggle("dd-active", it.getAttribute("data-lang") === lang);
+  }
+
+  updateNavigationLinks(lang);
+}
+
+function setLanguage(lang) {
+  try { localStorage.setItem("instadrop_lang", lang); } catch (e) {}
+  applyLanguage(lang);
+  updateLanguageUrl(lang);
+}
+
+function initLanguages() {
+  const lang = currentLanguage();
+  applyLanguage(lang);
+
+  const items = document.querySelectorAll(".lang-dd .lang-item, .side-lang-item");
+  for (const it of items) {
+    it.addEventListener("click", () => {
+      const choice = it.getAttribute("data-lang");
+      if (choice) {
+        setLanguage(choice);
+        const ddBtn = document.querySelector(".lang-dd .lang-btn");
+        if (ddBtn) ddBtn.blur();
+      }
+    });
+  }
+
+  window.addEventListener('popstate', () => {
+    applyLanguage(currentLanguage());
+  });
+}
+initLanguages();
+
 /* navbar scroll border + section scrollspy */
 const siteNav = document.getElementById("siteNav");
 const onNavScroll = () => { if (siteNav) siteNav.classList.toggle("scrolled", window.scrollY > 35); };

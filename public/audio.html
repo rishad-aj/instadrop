@@ -111,6 +111,7 @@
 
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
   <symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="4"/><circle cx="12" cy="12" r="3.5"/><circle cx="17.2" cy="8.8" r="1"/></symbol>
+  <symbol id="i-video" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2.5"/></symbol>
   <symbol id="i-reel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4.5"/><path d="M3 8.5h18"/><path d="M8.5 3l2 5.5M14.5 3l2 5.5"/><path d="M10.4 11.8l5 2.9-5 2.9v-5.8z" fill="currentColor"/></symbol>
   <symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M4 18l5-5 3 3 4-4 4 4"/></symbol>
   <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="9.5" r="3.2"/><path d="M6.5 19c1.4-2.4 3.3-3.6 5.5-3.6s4.1 1.2 5.5 3.6"/></symbol>
@@ -151,6 +152,24 @@
         <a class="navbar-item nav-link" href="#faq">FAQ</a>
       </div>
       <div class="navbar-end">
+        <div class="lang-dd" id="langDropdown">
+          <button class="lang-btn" type="button" aria-label="Select language" title="Select language">
+            <img class="lang-flag-img" id="currentLangFlag" src="/images/flags/us.svg" alt="English" width="19" height="14">
+            <span class="lang-code" id="currentLangLabel">EN</span>
+            <svg class="ic ic-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="dd-menu lang-menu" role="menu">
+            <button class="dd-item lang-item" data-lang="en" role="menuitem" type="button"><img class="lang-flag-img" src="/images/flags/us.svg" alt="" width="20" height="15"> English</button>
+            <button class="dd-item lang-item" data-lang="es" role="menuitem" type="button"><img class="lang-flag-img" src="/images/flags/es.svg" alt="" width="20" height="15"> Español</button>
+            <button class="dd-item lang-item" data-lang="pt" role="menuitem" type="button"><img class="lang-flag-img" src="/images/flags/br.svg" alt="" width="20" height="15"> Português</button>
+            <button class="dd-item lang-item" data-lang="id" role="menuitem" type="button"><img class="lang-flag-img" src="/images/flags/id.svg" alt="" width="20" height="15"> Bahasa Indonesia</button>
+            <button class="dd-item lang-item" data-lang="fr" role="menuitem" type="button"><img class="lang-flag-img" src="/images/flags/fr.svg" alt="" width="20" height="15"> Français</button>
+            <button class="dd-item lang-item" data-lang="de" role="menuitem" type="button"><img class="lang-flag-img" src="/images/flags/de.svg" alt="" width="20" height="15"> Deutsch</button>
+            <button class="dd-item lang-item" data-lang="tr" role="menuitem" type="button"><img class="lang-flag-img" src="/images/flags/tr.svg" alt="" width="20" height="15"> Türkçe</button>
+            <button class="dd-item lang-item" data-lang="ar" role="menuitem" type="button"><img class="lang-flag-img" src="/images/flags/ar.svg" alt="" width="20" height="15"> العربية</button>
+            <button class="dd-item lang-item" data-lang="hi" role="menuitem" type="button"><img class="lang-flag-img" src="/images/flags/in.svg" alt="" width="20" height="15"> हिन्दी</button>
+          </div>
+        </div>
         <div class="theme-dd" id="themeDropdown">
           <label class="dd-btn" tabindex="0" aria-label="Toggle theme" title="Theme">
             <svg class="ic i-moon"><use href="#i-moon"/></svg>
@@ -162,7 +181,7 @@
             <span class="dd-item" data-theme-choice="system" role="menuitem" tabindex="-1"><svg class="ic"><use href="#i-display"/></svg> System</span>
           </div>
         </div>
-        <a class="btn btn-primary btn-sm btn-rounded nav-cta" href="#downloader">Start downloading</a>
+        <a class="btn btn-primary btn-sm btn-rounded nav-cta" href="#downloader" data-i18n="nav_cta">Start downloading</a>
       </div>
     </div>
     <button class="hamburger" id="hamburgerBtn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="sideNav">
@@ -176,22 +195,28 @@
 <div class="side-overlay" id="sideOverlay" aria-hidden="true"></div>
 <aside class="side-nav" id="sideNav" aria-hidden="true" aria-label="Menu">
   <nav class="side-links">
-    <a class="side-link nav-link" href="#downloader">Downloader</a>
-    <a class="side-link nav-link" href="#features">Features</a>
-    <a class="side-link nav-link" href="#how">How it works</a>
-    <a class="side-link nav-link" href="#faq">FAQ</a>
+    <a class="side-link nav-link" href="#downloader" data-i18n="nav_downloader">Downloader</a>
+    <a class="side-link nav-link" href="#features" data-i18n="nav_features">Features</a>
+    <a class="side-link nav-link" href="#how" data-i18n="nav_how">How it works</a>
+    <a class="side-link nav-link" href="#faq" data-i18n="nav_faq">FAQ</a>
   </nav>
-  <div class="side-theme">
-    <span class="side-label">Theme</span>
-    <div class="side-theme-row">
-      <button class="side-theme-item" data-theme-choice="light" type="button"><svg class="ic"><use href="#i-sun"/></svg> Light</button>
-      <button class="side-theme-item" data-theme-choice="dark" type="button"><svg class="ic"><use href="#i-moon"/></svg> Dark</button>
-      <button class="side-theme-item" data-theme-choice="system" type="button"><svg class="ic"><use href="#i-display"/></svg> System</button>
+  <div class="side-lang">
+    <span class="side-label">Language</span>
+    <div class="side-lang-grid">
+      <button class="side-lang-item" data-lang="en" type="button"><img class="lang-flag-img" src="/images/flags/us.svg" alt="" width="18" height="13.5"> English</button>
+      <button class="side-lang-item" data-lang="es" type="button"><img class="lang-flag-img" src="/images/flags/es.svg" alt="" width="18" height="13.5"> Español</button>
+      <button class="side-lang-item" data-lang="pt" type="button"><img class="lang-flag-img" src="/images/flags/br.svg" alt="" width="18" height="13.5"> Português</button>
+      <button class="side-lang-item" data-lang="id" type="button"><img class="lang-flag-img" src="/images/flags/id.svg" alt="" width="18" height="13.5"> Bahasa</button>
+      <button class="side-lang-item" data-lang="fr" type="button"><img class="lang-flag-img" src="/images/flags/fr.svg" alt="" width="18" height="13.5"> Français</button>
+      <button class="side-lang-item" data-lang="de" type="button"><img class="lang-flag-img" src="/images/flags/de.svg" alt="" width="18" height="13.5"> Deutsch</button>
+      <button class="side-lang-item" data-lang="tr" type="button"><img class="lang-flag-img" src="/images/flags/tr.svg" alt="" width="18" height="13.5"> Türkçe</button>
+      <button class="side-lang-item" data-lang="ar" type="button"><img class="lang-flag-img" src="/images/flags/ar.svg" alt="" width="18" height="13.5"> العربية</button>
+      <button class="side-lang-item" data-lang="hi" type="button"><img class="lang-flag-img" src="/images/flags/in.svg" alt="" width="18" height="13.5"> हिन्दी</button>
     </div>
   </div>
   <button class="btn btn-primary btn-md btn-rounded btn-block side-cta" id="installPwaBtn" type="button">
     <svg class="ic" style="width:17px;height:17px;"><use href="#i-download"/></svg>
-    <span id="installPwaText">Install the app</span>
+    <span id="installPwaText" data-i18n="install_app">Install the app</span>
   </button>
 </aside>
 
@@ -201,16 +226,14 @@
       <div class="hero-left reveal">
         <span class="hero-badge"><svg class="ic"><use href="#i-music"/></svg> Reel to MP3 &middot; In-Browser Conversion &middot; Free</span>
         <h1><span class="accent">Instagram Audio</span> to MP3 Downloader</h1>
-        <p class="hero-sub">Extract any public Instagram Reel or video soundtrack as a clean MP3 file, converted on the fly right inside your browser &mdash; 100% free and <strong>ad-free</strong>.</p>
         <nav class="feature-tabs" aria-label="Instagram downloader tools">
-          <a class="feature-tab" href="./"><svg class="ic"><use href="#i-sparkles"/></svg> All</a>
-          <a class="feature-tab" href="video"><svg class="ic"><use href="#i-camera"/></svg> Video</a>
-          <a class="feature-tab" href="reels"><svg class="ic"><use href="#i-reel"/></svg> Reels</a>
-          <a class="feature-tab" href="story"><svg class="ic"><use href="#i-clock"/></svg> Story</a>
-          <a class="feature-tab" href="highlights"><svg class="ic"><use href="#i-star"/></svg> Highlights</a>
-          <a class="feature-tab" href="photo"><svg class="ic"><use href="#i-image"/></svg> Photo</a>
-          <a class="feature-tab active" href="audio" aria-current="page"><svg class="ic"><use href="#i-music"/></svg> Audio</a>
-          <a class="feature-tab" href="dp"><svg class="ic"><use href="#i-user"/></svg> DP</a>
+          <a class="feature-tab" href="photo" data-i18n="tab_photo"><svg class="ic"><use href="#i-image"/></svg> Photo</a>
+          <a class="feature-tab" href="video" data-i18n="tab_video"><svg class="ic"><use href="#i-video"/></svg> Video</a>
+          <a class="feature-tab" href="reels" data-i18n="tab_reels"><svg class="ic"><use href="#i-reel"/></svg> Reels</a>
+          <a class="feature-tab" href="story" data-i18n="tab_story"><svg class="ic"><use href="#i-clock"/></svg> Story</a>
+          <a class="feature-tab" href="highlights" data-i18n="tab_highlights"><svg class="ic"><use href="#i-star"/></svg> Highlights</a>
+          <a class="feature-tab active" href="audio" data-i18n="tab_audio" aria-current="page"><svg class="ic"><use href="#i-music"/></svg> Audio</a>
+          <a class="feature-tab" href="dp" data-i18n="tab_dp"><svg class="ic"><use href="#i-user"/></svg> DP</a>
         </nav>
       </div>
       <div class="hero-right reveal">
@@ -224,7 +247,7 @@
                   <span class="ph-marquee"><span class="ph-copy">https://www.instagram.com/reel/example/...</span><span class="ph-copy">https://www.instagram.com/reel/example/...</span></span>
                 </span>
               </div>
-              <button id="pasteBtn" class="btn btn-outline btn-lg btn-rounded" type="button"><svg class="ic" style="width:18px;height:18px;"><use href="#i-paste"/></svg> Paste</button>
+              <button id="pasteBtn" class="btn btn-outline btn-lg btn-rounded" type="button" data-i18n="paste_btn"><svg class="ic" style="width:18px;height:18px;"><use href="#i-paste"/></svg> Paste</button>
             </div>
             <button id="downloadBtn" class="btn btn-primary btn-lg btn-rounded btn-block" type="button"><svg class="ic" style="width:18px;height:18px;"><use href="#i-music"/></svg> Extract Audio</button>
             <p class="hint">Paste any Instagram Reel or video post link &mdash; then tap <b>Audio (MP3)</b> on the result to convert and save the soundtrack directly to your device.</p>
@@ -236,6 +259,7 @@
             <div id="errorEl" class="alert alert-error hidden"></div>
           </div>
         </div>
+        <p class="hero-sub hero-sub-below" data-i18n="hero_sub">Reels, posts, carousels, profile pictures, stories and highlights &mdash; streamed straight to your device at full quality. Completely free and <strong>ad-free</strong>: nothing is stored, ever.</p>
       </div>
     </div>
     <div class="results" id="result" aria-live="polite"></div>
