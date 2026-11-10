@@ -462,19 +462,23 @@ function currentLanguage() {
   return "en";
 }
 
+const INTERNAL_SLUGS = new Set(["photo", "video", "reels", "story", "highlights", "audio", "dp", "terms", "privacy"]);
+
 function updateNavigationLinks(lang) {
-  // Update feature tabs to route with /:lang/:feature
-  const tabs = document.querySelectorAll(".feature-tabs .feature-tab");
-  for (const tab of tabs) {
-    const href = tab.getAttribute("href") || "";
-    const clean = href.replace(/^.*?([^/]+)$/, '$1').replace(/\.html$/, '');
-    if (clean && !clean.startsWith('#')) {
-      tab.setAttribute("href", '/' + lang + '/' + clean);
+  // Update feature tabs and internal feature/legal links to route with /:lang/:feature
+  const links = document.querySelectorAll("a[href]");
+  for (const a of links) {
+    if (a.classList.contains("app-brand")) {
+      a.setAttribute("href", "/" + lang);
+      continue;
+    }
+    const rawHref = a.getAttribute("href") || "";
+    if (!rawHref || rawHref.startsWith("#") || rawHref.startsWith("http") || rawHref.startsWith("mailto:")) continue;
+    const clean = rawHref.replace(/^\/+/, "").replace(/^[a-z]{2}\//i, "").replace(/\.html$/, "");
+    if (INTERNAL_SLUGS.has(clean)) {
+      a.setAttribute("href", "/" + lang + "/" + clean);
     }
   }
-  // Update brand link
-  const brand = document.querySelector(".app-brand");
-  if (brand) brand.setAttribute("href", '/' + lang);
 }
 
 function updateLanguageUrl(lang) {
@@ -675,14 +679,21 @@ if (installPwaBtn) {
 /* ---------------- scroll reveal ---------------- */
 const revealEls = document.querySelectorAll(".reveal");
 if ("IntersectionObserver" in window) {
+  let ioFired = false;
   const revealObs = new IntersectionObserver((entries, obs) => {
+    ioFired = true;
     for (const en of entries) {
       if (!en.isIntersecting) continue;
       en.target.classList.add("in-view");
       obs.unobserve(en.target);
     }
-  }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
+  }, { threshold: 0.08, rootMargin: "0px 0px -4% 0px" });
   for (const el of revealEls) revealObs.observe(el);
+  setTimeout(() => {
+    if (!ioFired) {
+      for (const el of revealEls) el.classList.add("in-view");
+    }
+  }, 1200);
 } else {
   for (const el of revealEls) el.classList.add("in-view");
 }
@@ -853,7 +864,7 @@ function toast(msg, title) {
     t.setAttribute("role", "status");
     t.setAttribute("aria-live", "polite");
     t.innerHTML =
-      '<img class="insta-toast-icon" src="images/logo.png" alt="" width="36" height="36">' +
+      '<img class="insta-toast-icon" src="/images/logo.png" alt="" width="36" height="36">' +
       '<div class="insta-toast-body">' +
         '<div class="insta-toast-title"></div>' +
         '<div class="insta-toast-msg"></div>' +
@@ -1450,7 +1461,7 @@ downloadBtn.addEventListener("click", async () => {
 
 document.addEventListener("DOMContentLoaded", () => {
   if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0 && location.hostname.indexOf("perchance") === -1) {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
   }
 });
 urlInput.addEventListener("keydown", (e) => {

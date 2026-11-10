@@ -11,16 +11,16 @@
   <link rel="canonical" href="https://instadrop.web.app/story">
   <meta name="theme-color" content="#2563eb">
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#161616">
-  <link rel="icon" type="image/x-icon" href="icons/favicon.ico">
-  <link rel="icon" type="image/png" sizes="256x256" href="images/logo.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-light.png">
-  <link rel="apple-touch-icon" sizes="180x180" media="(prefers-color-scheme: dark)" href="icons/apple-touch-icon-dark.png">
+  <link rel="icon" type="image/x-icon" href="/icons/favicon.ico">
+  <link rel="icon" type="image/png" sizes="256x256" href="/images/logo.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-light.png">
+  <link rel="apple-touch-icon" sizes="180x180" media="(prefers-color-scheme: dark)" href="/icons/apple-touch-icon-dark.png">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="application-name" content="Instadrop">
   <meta name="apple-mobile-web-app-title" content="Instadrop">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="manifest" href="/manifest.webmanifest">
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Instadrop">
@@ -99,7 +99,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="/css/styles.css">
   <script>
     (function () {
       var s = localStorage.getItem("instadrop_theme");
@@ -140,16 +140,16 @@
 
 <nav class="navbar navbar-sticky navbar-glass" id="siteNav">
   <div class="navbar-inner">
-    <a class="app-brand" href="./">
-      <img class="brand-logo" src="images/logo.png" alt="Instadrop logo" width="34" height="34">
-      <img class="brand-wordmark" src="images/brand.png" alt="Instadrop" width="122" height="26">
+    <a class="app-brand" href="/">
+      <img class="brand-logo" src="/images/logo.png" alt="Instadrop logo" width="34" height="34">
+      <img class="brand-wordmark" src="/images/brand.png" alt="Instadrop" width="122" height="26">
     </a>
     <div class="navbar-center">
       <div class="navbar-links">
-        <a class="navbar-item nav-link" href="#downloader">Downloader</a>
-        <a class="navbar-item nav-link" href="#features">Features</a>
-        <a class="navbar-item nav-link" href="#how">How it works</a>
-        <a class="navbar-item nav-link" href="#faq">FAQ</a>
+        <a class="navbar-item nav-link" href="#downloader" data-i18n="nav_downloader">Downloader</a>
+        <a class="navbar-item nav-link" href="#features" data-i18n="nav_features">Features</a>
+        <a class="navbar-item nav-link" href="#how" data-i18n="nav_how">How it works</a>
+        <a class="navbar-item nav-link" href="#faq" data-i18n="nav_faq">FAQ</a>
       </div>
       <div class="navbar-end">
         <div class="lang-dd" id="langDropdown">
@@ -227,13 +227,13 @@
         <span class="hero-badge"><svg class="ic"><use href="#i-clock"/></svg> Anonymous &middot; Original quality &middot; No login</span>
         <h1><span class="accent">Instagram Story</span> Downloader</h1>
         <nav class="feature-tabs" aria-label="Instagram downloader tools">
-          <a class="feature-tab" href="photo" data-i18n="tab_photo"><svg class="ic"><use href="#i-image"/></svg> Photo</a>
-          <a class="feature-tab" href="video" data-i18n="tab_video"><svg class="ic"><use href="#i-video"/></svg> Video</a>
-          <a class="feature-tab" href="reels" data-i18n="tab_reels"><svg class="ic"><use href="#i-reel"/></svg> Reels</a>
-          <a class="feature-tab active" href="story" data-i18n="tab_story" aria-current="page"><svg class="ic"><use href="#i-clock"/></svg> Story</a>
-          <a class="feature-tab" href="highlights" data-i18n="tab_highlights"><svg class="ic"><use href="#i-star"/></svg> Highlights</a>
-          <a class="feature-tab" href="audio" data-i18n="tab_audio"><svg class="ic"><use href="#i-music"/></svg> Audio</a>
-          <a class="feature-tab" href="dp" data-i18n="tab_dp"><svg class="ic"><use href="#i-user"/></svg> DP</a>
+          <a class="feature-tab" href="/photo" data-i18n="tab_photo"><svg class="ic"><use href="#i-image"/></svg> Photo</a>
+          <a class="feature-tab" href="/video" data-i18n="tab_video"><svg class="ic"><use href="#i-video"/></svg> Video</a>
+          <a class="feature-tab" href="/reels" data-i18n="tab_reels"><svg class="ic"><use href="#i-reel"/></svg> Reels</a>
+          <a class="feature-tab active" href="/story" data-i18n="tab_story" aria-current="page"><svg class="ic"><use href="#i-clock"/></svg> Story</a>
+          <a class="feature-tab" href="/highlights" data-i18n="tab_highlights"><svg class="ic"><use href="#i-star"/></svg> Highlights</a>
+          <a class="feature-tab" href="/audio" data-i18n="tab_audio"><svg class="ic"><use href="#i-music"/></svg> Audio</a>
+          <a class="feature-tab" href="/dp" data-i18n="tab_dp"><svg class="ic"><use href="#i-user"/></svg> DP</a>
         </nav>
       </div>
       <div class="hero-right reveal">
@@ -250,7 +250,7 @@
               <button id="pasteBtn" class="btn btn-outline btn-lg btn-rounded" type="button" data-i18n="paste_btn"><svg class="ic" style="width:18px;height:18px;"><use href="#i-paste"/></svg> Paste</button>
             </div>
             <button id="downloadBtn" class="btn btn-primary btn-lg btn-rounded btn-block" type="button"><svg class="ic" style="width:18px;height:18px;"><use href="#i-download"/></svg> Download Story</button>
-            <p class="hint">Paste any public story link (<b>instagram.com/stories/username/…</b>) or <a href="highlights">story highlight link</a> to view and download the media anonymously.</p>
+            <p class="hint">Paste any public story link (<b>instagram.com/stories/username/…</b>) or <a href="/highlights">story highlight link</a> to view and download the media anonymously.</p>
             <div class="hist hidden" id="histRow"></div>
             <div id="spinnerCtn" class="spinner-ctn hidden">
               <div class="spinner"></div>
@@ -365,7 +365,7 @@
       </details>
       <details class="accordion faq-item reveal">
         <summary class="accordion-title">Why do some active 24-hour stories not load?<svg class="ic faq-chevron"><use href="#i-chevron"/></svg></summary>
-        <div class="accordion-content"><p>Instagram often restricts active 24-hour stories to logged-in sessions. However, once a story is saved to a profile's public <a href="highlights">Story Highlights</a>, Instadrop can download every slide without login.</p></div>
+        <div class="accordion-content"><p>Instagram often restricts active 24-hour stories to logged-in sessions. However, once a story is saved to a profile's public <a href="/highlights">Story Highlights</a>, Instadrop can download every slide without login.</p></div>
       </details>
       <details class="accordion faq-item reveal">
         <summary class="accordion-title">Can I also extract MP3 audio from a video story?<svg class="ic faq-chevron"><use href="#i-chevron"/></svg></summary>
@@ -378,19 +378,19 @@
 <footer class="site-footer">
   <div class="footer-grid reveal">
     <div>
-      <div class="foot-brand"><img class="brand-logo" src="images/logo.png" alt="Instadrop logo" width="34" height="34"> <img class="brand-wordmark" src="images/brand.png" alt="Instadrop" width="122" height="26"></div>
+      <div class="foot-brand"><img class="brand-logo" src="/images/logo.png" alt="Instadrop logo" width="34" height="34"> <img class="brand-wordmark" src="/images/brand.png" alt="Instadrop" width="122" height="26"></div>
       <p>A privacy-friendly, <strong>ad-free</strong> Instagram media downloader. Your links and files stay on your device &mdash; nothing is stored by the tool.</p>
     </div>
     <div>
       <h2>Features</h2>
       <ul>
-        <li><a href="video">Video downloader</a></li>
-        <li><a href="reels">Reels downloader</a></li>
-        <li><a href="story">Story saver</a></li>
-        <li><a href="highlights">Story highlights</a></li>
-        <li><a href="photo">Photo &amp; carousel</a></li>
-        <li><a href="audio">Extract audio</a></li>
-        <li><a href="dp">Profile pictures (DP)</a></li>
+        <li><a href="/video">Video downloader</a></li>
+        <li><a href="/reels">Reels downloader</a></li>
+        <li><a href="/story">Story saver</a></li>
+        <li><a href="/highlights">Story highlights</a></li>
+        <li><a href="/photo">Photo &amp; carousel</a></li>
+        <li><a href="/audio">Extract audio</a></li>
+        <li><a href="/dp">Profile pictures (DP)</a></li>
       </ul>
     </div>
     <div>
@@ -405,8 +405,8 @@
     <div>
       <h2>Legal</h2>
       <ul>
-        <li><a href="terms">Terms &amp; Conditions</a></li>
-        <li><a href="privacy">Privacy Policy</a></li>
+        <li><a href="/terms">Terms &amp; Conditions</a></li>
+        <li><a href="/privacy">Privacy Policy</a></li>
         <li><a href="#faq">Respect creators' rights</a></li>
         <li><a href="#faq">Personal use only</a></li>
         <li><a href="#faq">Not affiliated with Meta</a></li>
@@ -415,14 +415,14 @@
   </div>
   <div class="footer-gradient">
     <div class="footer-legal">
-      <p>© <span class="js-year">2026</span> Instadrop. All rights reserved. <a href="terms">Terms &amp; Conditions</a> and <a href="privacy">Privacy Policy</a>.</p>
+      <p>© <span class="js-year">2026</span> Instadrop. All rights reserved. <a href="/terms">Terms &amp; Conditions</a> and <a href="/privacy">Privacy Policy</a>.</p>
     </div>
     <div class="footer-wordmark" aria-hidden="true">
-      <img src="images/wordmark.svg" alt="">
+      <img src="/images/wordmark.svg" alt="">
     </div>
   </div>
 </footer>
 <script>try{document.querySelectorAll(".js-year").forEach(function(el){el.textContent=new Date().getFullYear();});}catch(e){}</script>
-<script src="js/script.js"></script>
+<script src="/js/script.js"></script>
 </body>
 </html>

@@ -1,24 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480">
-  <rect width="640" height="160" y="0" fill="#ff9933"/>
-  <rect width="640" height="160" y="160" fill="#ffffff"/>
-  <rect width="640" height="160" y="320" fill="#138808"/>
-  <g transform="translate(320, 240)">
-    <circle r="52" fill="none" stroke="#000080" stroke-width="4.5"/>
-    <circle r="10" fill="#000080"/>
-    <!-- 24 spokes -->
-    <g stroke="#000080" stroke-width="2.5">
-      <line y1="-50" y2="50"/>
-      <line x1="-50" x2="50"/>
-      <line y1="-50" y2="50" transform="rotate(15)"/>
-      <line x1="-50" x2="50" transform="rotate(15)"/>
-      <line y1="-50" y2="50" transform="rotate(30)"/>
-      <line x1="-50" x2="50" transform="rotate(30)"/>
-      <line y1="-50" y2="50" transform="rotate(45)"/>
-      <line x1="-50" x2="50" transform="rotate(45)"/>
-      <line y1="-50" y2="50" transform="rotate(60)"/>
-      <line x1="-50" x2="50" transform="rotate(60)"/>
-      <line y1="-50" y2="50" transform="rotate(75)"/>
-      <line x1="-50" x2="50" transform="rotate(75)"/>
-    </g>
+<svg viewBox="0 -4 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="clip0_503_2709">
+      <rect width="28" height="20" rx="2"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#clip0_503_2709)">
+    <rect width="28" height="20" fill="#FFFFFF"/>
+    <path d="M0 0H28V6.66667H0V0Z" fill="#FF9933"/>
+    <path d="M0 13.3333H28V20H0V13.3333Z" fill="#138808"/>
+    <circle cx="14" cy="10" r="2.3333" fill="none" stroke="#000080" stroke-width="0.666667"/>
+    <circle cx="14" cy="10" r="0.6667" fill="#000080"/>
   </g>
 </svg>

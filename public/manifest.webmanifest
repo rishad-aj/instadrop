@@ -13,20 +13,20 @@
   "categories": ["utilities", "photo", "music"],
   "launch_handler": { "client_mode": "focus-existing" },
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "screenshots": [
     {
-      "src": "images/screenshot-wide.png",
+      "src": "/images/screenshot-wide.png",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Instadrop desktop — Download Instagram reels, posts, profile pictures and audio in one click"
     },
     {
-      "src": "images/screenshot-narrow.png",
+      "src": "/images/screenshot-narrow.png",
       "sizes": "720x1280",
       "type": "image/png",
       "form_factor": "narrow",
@@ -39,28 +39,28 @@
       "short_name": "Reels",
       "description": "Download an Instagram reel or post as MP4",
       "url": "/reels",
-      "icons": [{ "src": "icons/shortcut-reel-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/icons/shortcut-reel-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Grab a profile picture",
       "short_name": "DP",
       "description": "Fetch any profile picture at original size",
       "url": "/dp",
-      "icons": [{ "src": "icons/shortcut-profile-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/icons/shortcut-profile-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Extract audio",
       "short_name": "Audio",
       "description": "Turn a reel's soundtrack into an MP3 file",
       "url": "/audio",
-      "icons": [{ "src": "icons/shortcut-audio-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/icons/shortcut-audio-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Paste link to download",
       "short_name": "Paste",
       "description": "Open the quick-download widget and download in one tap",
       "url": "/widget.html?action=paste",
-      "icons": [{ "src": "icons/shortcut-paste-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/icons/shortcut-paste-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ],
   "share_target": {
@@ -78,13 +78,13 @@
       "description": "Paste an Instagram link and jump straight to download.",
       "tag": "instadrop-bar",
       "template": "instadrop-bar-template",
-      "ms_ac_template": "widgets/instadrop-bar-template.json",
-      "data": "widgets/instadrop-bar-data.json",
+      "ms_ac_template": "/widgets/instadrop-bar-template.json",
+      "data": "/widgets/instadrop-bar-data.json",
       "type": "application/json",
       "screenshots": [
-        { "src": "images/widget-screenshot.png", "sizes": "560x220", "type": "image/png", "label": "Instadrop quick download widget" }
+        { "src": "/images/widget-screenshot.png", "sizes": "560x220", "type": "image/png", "label": "Instadrop quick download widget" }
       ],
-      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }],
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }],
       "auth": false,
       "update": 3600
     }

@@ -15,7 +15,7 @@ const SUPPORTED_LANGS = ['en', 'es', 'pt', 'id', 'fr', 'de', 'tr', 'ar', 'hi'];
 const SUPPORTED_LANGS_SET = new Set(SUPPORTED_LANGS);
 
 // Canonical lowercase feature routes
-const FEATURE_ROUTES = new Set(['photo', 'video', 'reels', 'story', 'highlights', 'audio', 'dp', 'privacy', 'terms']);
+const FEATURE_ROUTES = new Set(['photo', 'video', 'reels', 'story', 'highlights', 'audio', 'dp', 'privacy', 'terms', 'widget']);
 
 // Aliases and typo redirects (/post, /psot, /videos, etc.)
 const ROUTE_ALIASES = {
@@ -168,6 +168,20 @@ function renderHtml(htmlFile, lang, featureKey, featureSlug) {
   return html;
 }
 
+// Safety redirect if any language-prefixed static asset is requested (e.g. /en/css/styles.css -> /css/styles.css)
+app.get('/:lang([a-zA-Z]{2})/:dir(css|js|images|icons|widgets)/*', (req, res, next) => {
+  const lang = req.params.lang.toLowerCase();
+  if (!SUPPORTED_LANGS_SET.has(lang)) return next();
+  const rest = req.originalUrl.replace(/^\/[a-zA-Z]{2}(?=\/)/, '');
+  return res.redirect(301, rest);
+});
+
+app.get('/:lang([a-zA-Z]{2})/:file(manifest\\.webmanifest|sw\\.js|favicon\\.ico)', (req, res, next) => {
+  const lang = req.params.lang.toLowerCase();
+  if (!SUPPORTED_LANGS_SET.has(lang)) return next();
+  return res.redirect(301, '/' + req.params.file);
+});
+
 // Language-prefixed routes: /:lang and /:lang/:feature
 app.get('/:lang([a-zA-Z]{2})', (req, res, next) => {
   const lang = req.params.lang.toLowerCase();
@@ -186,6 +200,10 @@ app.get('/:lang([a-zA-Z]{2})/:feature', (req, res, next) => {
 
   const featRaw = req.params.feature;
   const featLower = featRaw.toLowerCase().replace(/\.html$/, '');
+
+  if (featLower === 'index') {
+    return res.redirect(301, `/${lang}`);
+  }
 
   // Handle alias redirects (e.g. /en/psot -> /en/photo)
   if (ROUTE_ALIASES[featLower] && ROUTE_ALIASES[featLower] !== featLower) {
@@ -213,6 +231,10 @@ app.use((req, res, next) => {
   if (!seg) return next();
   const lower = seg.toLowerCase().replace(/\.html$/, '');
   const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+
+  if (lower === 'index') {
+    return res.redirect(301, '/' + qs);
+  }
 
   if (ROUTE_ALIASES[lower] && ROUTE_ALIASES[lower] !== lower) {
     return res.redirect(301, '/' + ROUTE_ALIASES[lower] + qs);

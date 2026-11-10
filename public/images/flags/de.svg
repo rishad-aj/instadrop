@@ -1,5 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480">
-  <path fill="#000000" d="M0 0h640v160H0z"/>
-  <path fill="#dd0000" d="M0 160h640v160H0z"/>
-  <path fill="#ffce00" d="M0 320h640v160H0z"/>
+
+<svg viewBox="0 -4 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="germanFlagClip">
+      <rect width="28" height="20" rx="2"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#germanFlagClip)">
+    <rect width="28" height="6.6667" fill="#000000"/>
+    <rect y="6.6667" width="28" height="6.6666" fill="#DD0000"/>
+    <rect y="13.3333" width="28" height="6.6667" fill="#FFCC00"/>
+  </g>
 </svg>

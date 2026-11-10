@@ -1,5 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480">
-  <path fill="#002395" d="M0 0h213.3v480H0z"/>
-  <path fill="#ffffff" d="M213.3 0h213.4v480H213.3z"/>
-  <path fill="#ed2939" d="M426.7 0H640v480H426.7z"/>
+
+<svg viewBox="0 -4 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="franceClip">
+      <rect width="28" height="20" rx="2"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#franceClip)">
+    <rect width="9.3333" height="20" fill="#0055A4"/>
+    <rect x="9.3333" width="9.3334" height="20" fill="#FFFFFF"/>
+    <rect x="18.6667" width="9.3333" height="20" fill="#EF4135"/>
+  </g>
 </svg>
