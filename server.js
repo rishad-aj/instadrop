@@ -11,8 +11,70 @@ app.get('/favicon.ico', (req, res) => {
   res.redirect(301, '/icons/favicon.ico');
 });
 
+app.use(express.json({ limit: '256kb' }));
+
 const SUPPORTED_LANGS = ['en', 'es', 'pt', 'id', 'fr', 'de', 'tr', 'ar', 'hi'];
 const SUPPORTED_LANGS_SET = new Set(SUPPORTED_LANGS);
+
+const translateCache = new Map();
+
+app.post('/api/translate', async (req, res) => {
+  try {
+    const tl = String((req.body && req.body.tl) || '').toLowerCase();
+    const texts = Array.isArray(req.body && req.body.texts) ? req.body.texts : [];
+    if (!SUPPORTED_LANGS_SET.has(tl) || tl === 'en' || !texts.length) {
+      return res.json({ translations: texts });
+    }
+    const results = new Array(texts.length);
+    const missingIdx = [];
+    const missingTexts = [];
+    for (let i = 0; i < texts.length; i++) {
+      const t = String(texts[i] || '').trim();
+      const key = `${tl}::${t}`;
+      if (!t) {
+        results[i] = '';
+      } else if (translateCache.has(key)) {
+        results[i] = translateCache.get(key);
+      } else {
+        missingIdx.push(i);
+        missingTexts.push(t);
+      }
+    }
+    if (missingTexts.length > 0) {
+      const joined = missingTexts.join('\n');
+      const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=' + encodeURIComponent(tl) + '&dt=t';
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'q=' + encodeURIComponent(joined),
+      });
+      const data = await r.json();
+      const full = Array.isArray(data && data[0]) ? data[0].map((x) => x[0]).join('') : '';
+      const lines = full.split('\n').map((s) => s.trim());
+      if (lines.length === missingTexts.length) {
+        for (let k = 0; k < missingTexts.length; k++) {
+          translateCache.set(`${tl}::${missingTexts[k]}`, lines[k]);
+          results[missingIdx[k]] = lines[k];
+        }
+      } else {
+        for (let k = 0; k < missingTexts.length; k++) {
+          const singleRes = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'q=' + encodeURIComponent(missingTexts[k]),
+          });
+          const sData = await singleRes.json();
+          const tr = Array.isArray(sData && sData[0]) ? sData[0].map((x) => x[0]).join('').trim() : missingTexts[k];
+          translateCache.set(`${tl}::${missingTexts[k]}`, tr);
+          results[missingIdx[k]] = tr;
+        }
+      }
+    }
+    return res.json({ translations: results });
+  } catch (err) {
+    return res.json({ translations: Array.isArray(req.body && req.body.texts) ? req.body.texts : [] });
+  }
+});
 
 // Canonical lowercase feature routes
 const FEATURE_ROUTES = new Set(['photo', 'video', 'reels', 'story', 'highlights', 'audio', 'dp', 'privacy', 'terms', 'widget']);

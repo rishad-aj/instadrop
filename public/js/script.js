@@ -502,6 +502,13 @@ function updateLanguageUrl(lang) {
   updateNavigationLinks(lang);
 }
 
+function t(enStr) {
+  if (window.InstadropI18n && typeof window.InstadropI18n.t === "function") {
+    return window.InstadropI18n.t(enStr, currentLanguage());
+  }
+  return enStr;
+}
+
 function applyLanguage(lang) {
   if (!I18N_DICT[lang]) lang = "en";
   const dict = I18N_DICT[lang];
@@ -515,6 +522,11 @@ function applyLanguage(lang) {
   if (flagEl && I18N_LANGS[lang]) {
     flagEl.src = I18N_LANGS[lang].flag;
     flagEl.alt = I18N_LANGS[lang].name;
+  }
+
+  // Translate the entire page DOM (headings, badges, buttons, placeholders, stats, features, steps, FAQs, footer, etc.)
+  if (window.InstadropI18n && typeof window.InstadropI18n.translateFullDOM === "function") {
+    window.InstadropI18n.translateFullDOM(lang);
   }
 
   // update all [data-i18n] nodes
@@ -533,12 +545,6 @@ function applyLanguage(lang) {
     }
   }
 
-  // update placeholder text if present
-  const phCopies = document.querySelectorAll(".ph-copy");
-  if (phCopies.length && dict.ph_text) {
-    for (const p of phCopies) p.textContent = dict.ph_text;
-  }
-
   // update active class in dropdowns & side-menu
   const items = document.querySelectorAll(".lang-dd .lang-item, .side-lang-item");
   for (const it of items) {
@@ -546,6 +552,9 @@ function applyLanguage(lang) {
   }
 
   updateNavigationLinks(lang);
+  if (typeof renderHistory === "function") {
+    try { renderHistory(); } catch (e) {}
+  }
 }
 
 function setLanguage(lang) {
@@ -630,7 +639,7 @@ const installPwaText = document.getElementById("installPwaText");
 function markPwaInstalled() {
   if (!installPwaBtn) return;
   installPwaBtn.classList.add("is-installed");
-  installPwaBtn.innerHTML = '<svg class="ic" style="width:17px;height:17px;"><use href="#i-check"/></svg><span>App installed</span>';
+  installPwaBtn.innerHTML = '<svg class="ic" style="width:17px;height:17px;"><use href="#i-check"/></svg><span>' + t("App installed") + '</span>';
 }
 
 if (isStandaloneApp()) {
@@ -645,14 +654,14 @@ window.addEventListener("beforeinstallprompt", (e) => {
 window.addEventListener("appinstalled", () => {
   deferredInstallPrompt = null;
   markPwaInstalled();
-  toast("Open it anytime right from your home screen.", "Instadrop installed");
+  toast(t("Open it anytime right from your home screen."), t("Instadrop installed"));
 });
 
 if (installPwaBtn) {
   installPwaBtn.addEventListener("click", async () => {
     setSideOpen(false);
     if (isStandaloneApp() || installPwaBtn.classList.contains("is-installed")) {
-      toast("Instadrop is already installed on your device.", "App installed");
+      toast(t("Instadrop is already installed on your device."), t("App installed"));
       return;
     }
     if (deferredInstallPrompt) {
@@ -669,9 +678,9 @@ if (installPwaBtn) {
     const ua = navigator.userAgent || "";
     const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     if (isIOS) {
-      toast("Tap Share in Safari, then tap 'Add to Home Screen'.", "Install Instadrop");
+      toast(t("Tap Share in Safari, then tap 'Add to Home Screen'."), t("Install Instadrop"));
     } else {
-      toast("Open your browser menu (⋮) and tap 'Install app' or 'Add to Home screen'.", "Install Instadrop");
+      toast(t("Open your browser menu (⋮) and tap 'Install app' or 'Add to Home screen'."), t("Install Instadrop"));
     }
   });
 }
@@ -736,7 +745,7 @@ if (pasteBtn) {
     try {
       const text = await navigator.clipboard.readText();
       if (!text || !text.trim()) {
-        showError("Clipboard is empty — copy an Instagram link first, then press Paste.");
+        showError(t("Clipboard is empty — copy an Instagram link first, then press Paste."));
         return;
       }
       urlInput.value = text.trim();
@@ -744,7 +753,7 @@ if (pasteBtn) {
       errorEl.classList.add("hidden");
       if (parseInput(urlInput.value).kind !== "unknown") downloadBtn.click();
     } catch (e) {
-      showError("Couldn't read the clipboard — press Ctrl+V inside the box instead.");
+      showError(t("Couldn't read the clipboard — press Ctrl+V inside the box instead."));
       urlInput.focus();
     }
   });
@@ -856,14 +865,14 @@ function triggerSave(blob, filename) {
 }
 
 function toast(msg, title) {
-  var t = document.getElementById("instaToast");
-  if (!t) {
-    t = document.createElement("div");
-    t.id = "instaToast";
-    t.className = "insta-toast";
-    t.setAttribute("role", "status");
-    t.setAttribute("aria-live", "polite");
-    t.innerHTML =
+  var tEl = document.getElementById("instaToast");
+  if (!tEl) {
+    tEl = document.createElement("div");
+    tEl.id = "instaToast";
+    tEl.className = "insta-toast";
+    tEl.setAttribute("role", "status");
+    tEl.setAttribute("aria-live", "polite");
+    tEl.innerHTML =
       '<img class="insta-toast-icon" src="/images/logo.png" alt="" width="36" height="36">' +
       '<div class="insta-toast-body">' +
         '<div class="insta-toast-title"></div>' +
@@ -872,19 +881,19 @@ function toast(msg, title) {
       '<button class="insta-toast-close" type="button" aria-label="Dismiss">' +
         '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>' +
       '</button>';
-    t.querySelector(".insta-toast-close").addEventListener("click", function () {
-      t.classList.remove("show");
-      clearTimeout(t._tm);
+    tEl.querySelector(".insta-toast-close").addEventListener("click", function () {
+      tEl.classList.remove("show");
+      clearTimeout(tEl._tm);
     });
-    document.body.appendChild(t);
+    document.body.appendChild(tEl);
   }
-  var titleEl = t.querySelector(".insta-toast-title");
-  var msgEl = t.querySelector(".insta-toast-msg");
+  var titleEl = tEl.querySelector(".insta-toast-title");
+  var msgEl = tEl.querySelector(".insta-toast-msg");
   titleEl.textContent = title || "Instadrop";
   msgEl.textContent = msg;
-  t.classList.add("show");
-  clearTimeout(t._tm);
-  t._tm = setTimeout(function () { t.classList.remove("show"); }, 4500);
+  tEl.classList.add("show");
+  clearTimeout(tEl._tm);
+  tEl._tm = setTimeout(function () { tEl.classList.remove("show"); }, 4500);
 }
 
 function fmtDuration(sec) {
@@ -929,13 +938,14 @@ function addHistory(entry) {
   renderHistory();
 }
 function renderHistory() {
+  if (!histRow) return;
   const h = loadHistory();
   histRow.classList.toggle("hidden", h.length === 0);
   histRow.innerHTML = "";
   if (!h.length) return;
   const lbl = document.createElement("span");
   lbl.className = "lbl";
-  lbl.textContent = "Recent:";
+  lbl.textContent = t("Recent:");
   histRow.appendChild(lbl);
   for (const entry of h) {
     const c = document.createElement("button");
@@ -950,7 +960,7 @@ function renderHistory() {
   }
   const cl = document.createElement("button");
   cl.className = "chip clear";
-  cl.textContent = "clear";
+  cl.textContent = t("clear");
   cl.addEventListener("click", () => { saveHistory([]); renderHistory(); });
   histRow.appendChild(cl);
 }
@@ -1089,16 +1099,16 @@ function addMetaExtra(metaEl, data) {
     copyBtn.className = "copy-btn";
     copyBtn.title = "Copy caption";
     copyBtn.setAttribute("aria-label", "Copy caption to clipboard");
-    copyBtn.innerHTML = COPY_ICON + CHECK_ICON + '<span class="copy-label">Copy</span>';
+    copyBtn.innerHTML = COPY_ICON + CHECK_ICON + '<span class="copy-label">' + t("Copy") + '</span>';
     copyBtn.addEventListener("click", async () => {
       const ok = await copyText(full);
       const label = copyBtn.querySelector(".copy-label");
       clearTimeout(copyBtn._resetTimer);
       copyBtn.classList.toggle("copied", ok);
-      label.textContent = ok ? "Copied" : "Copy failed";
+      label.textContent = ok ? t("Copied") : t("Copy failed");
       copyBtn._resetTimer = setTimeout(() => {
         copyBtn.classList.remove("copied");
-        label.textContent = "Copy";
+        label.textContent = t("Copy");
       }, 2000);
     });
 
@@ -1146,7 +1156,7 @@ async function fetchProfilePicBytes(url) {
 async function renderItems(data, opts, input) {
   const who = document.createElement("span");
   who.className = "who";
-  const baseLabel = opts.label || (data.items.length > 1 ? data.items.length + " media items" : "1 media item");
+  const baseLabel = opts.label || (data.items.length > 1 ? data.items.length + " " + t("media items") : t("1 media item"));
   const coverCount = data.items.filter((it) => it.isCover).length;
   who.textContent = baseLabel + (coverCount ? " · includes cover image" + (coverCount > 1 ? "s" : "") : "");
   const open = document.createElement("a");
@@ -1154,7 +1164,7 @@ async function renderItems(data, opts, input) {
   open.href = opts.openUrl;
   open.target = "_blank";
   open.rel = "noopener noreferrer";
-  open.textContent = opts.openLabel || "Open ↗";
+  open.textContent = opts.openLabel || t("Open ↗");
   const metaEl = metaBar(who);
   metaEl.querySelector(".row").appendChild(open);
   addMetaExtra(metaEl, data);
@@ -1166,7 +1176,7 @@ async function renderItems(data, opts, input) {
     box.className = "item";
     const itemLabel = document.createElement("div");
     itemLabel.className = "item-label";
-    itemLabel.textContent = item.kind === "video" ? "Video" : (item.isCover ? "Cover image" : "Image");
+    itemLabel.textContent = item.kind === "video" ? t("Video") : (item.isCover ? t("Cover image") : t("Image"));
     box.appendChild(itemLabel);
     const ext = item.kind === "video" ? "mp4" : "jpg";
     const filename = opts.filePrefix + (data.items.length > 1 ? "_" + (i + 1) : "") + "." + ext;
@@ -1175,7 +1185,7 @@ async function renderItems(data, opts, input) {
     frame.className = "media-frame";
     const hint = document.createElement("div");
     hint.className = "frame-hint loading";
-    hint.innerHTML = '<div class="spinner"></div><span>Loading preview…</span>';
+    hint.innerHTML = '<div class="spinner"></div><span>' + t("Loading preview…") + '</span>';
     frame.appendChild(hint);
     box.appendChild(frame);
 
@@ -1185,7 +1195,7 @@ async function renderItems(data, opts, input) {
     const saveBtn = document.createElement("button");
     saveBtn.className = "dl-btn";
     saveBtn.disabled = true;
-    saveBtn.textContent = "Download";
+    saveBtn.textContent = t("Download");
     saveBtn.title = "Downloads straight to your device.";
     row.appendChild(saveBtn);
 
@@ -1193,7 +1203,7 @@ async function renderItems(data, opts, input) {
     if (audioBtn) {
       audioBtn.className = "dl-btn alt";
       audioBtn.disabled = true;
-      audioBtn.textContent = "Audio (MP3)";
+      audioBtn.textContent = t("Audio (MP3)");
       audioBtn.title = "Extracts audio as MP3.";
       row.appendChild(audioBtn);
     }
@@ -1223,7 +1233,7 @@ async function renderItems(data, opts, input) {
         badge.classList.remove("hidden");
       });
     } else {
-      badge.textContent = item.isCover ? "Cover image" : "Photo";
+      badge.textContent = item.isCover ? t("Cover image") : t("Photo");
       badge.classList.remove("hidden");
     }
 
@@ -1244,27 +1254,27 @@ async function renderItems(data, opts, input) {
       media.src = URL.createObjectURL(blob);
       dropHint();
       saveBtn.disabled = false;
-      saveBtn.textContent = "Download (" + mb + " MB)";
+      saveBtn.textContent = t("Download") + " (" + mb + " MB)";
       saveBtn.onclick = () => triggerSave(blob, filename);
       if (audioBtn) {
         audioBtn.disabled = false;
         audioBtn.onclick = async () => {
           audioBtn.disabled = true;
-          audioBtn.textContent = "Preparing audio…";
+          audioBtn.textContent = t("Preparing audio…");
           if (!ffmpegReady) {
             spinnerCtn.classList.remove("hidden");
-            spinnerText.textContent = "Downloading audio converter (one-time)…";
+            spinnerText.textContent = t("Downloading audio converter (one-time)…");
           }
           try {
             const mp3 = await convertToMp3(bytes);
             spinnerCtn.classList.add("hidden");
             triggerSave(new Blob([mp3], { type: "audio/mpeg" }), filename.replace(/\.mp4$/, ".mp3"));
-            audioBtn.textContent = "MP3 saved ✓";
-            setTimeout(() => { audioBtn.textContent = "Audio (MP3)"; audioBtn.disabled = false; }, 4000);
+            audioBtn.textContent = t("MP3 saved ✓");
+            setTimeout(() => { audioBtn.textContent = t("Audio (MP3)"); audioBtn.disabled = false; }, 4000);
           } catch (e) {
             spinnerCtn.classList.add("hidden");
             showError("Audio failed: " + e.message);
-            audioBtn.textContent = "Audio (MP3)";
+            audioBtn.textContent = t("Audio (MP3)");
             audioBtn.disabled = false;
           }
         };
@@ -1272,11 +1282,11 @@ async function renderItems(data, opts, input) {
     }).catch(() => {
       const note = document.createElement("div");
       note.className = "frame-hint";
-      note.textContent = "Preview shown above. Media host is busy — use the Download button.";
+      note.textContent = t("Preview shown above. Media host is busy — use the Download button.");
       frame.appendChild(note);
-      saveBtn.textContent = "Download (busy)";
+      saveBtn.textContent = t("Download (busy)");
       if (audioBtn) {
-        audioBtn.textContent = "Audio (needs preview)";
+        audioBtn.textContent = t("Audio (needs preview)");
       }
     });
   });
@@ -1296,7 +1306,7 @@ async function renderDp(username, input) {
   open.href = "https://www.instagram.com/" + encodeURIComponent(username) + "/";
   open.target = "_blank";
   open.rel = "noopener noreferrer";
-  open.textContent = "Open profile ↗";
+  open.textContent = t("Open profile ↗");
   const metaEl = metaBar(who);
   metaEl.querySelector(".row").appendChild(open);
   const card = wrapResult(metaEl);
@@ -1339,7 +1349,7 @@ async function renderDp(username, input) {
   frame.className = "media-frame dp-avatar";
   const hint = document.createElement("div");
   hint.className = "frame-hint";
-  hint.innerHTML = '<div class="spinner"></div><span>Fetching profile…</span>';
+  hint.innerHTML = '<div class="spinner"></div><span>' + t("Fetching profile…") + '</span>';
   frame.appendChild(hint);
   box.appendChild(frame);
   const row = document.createElement("div");
@@ -1347,20 +1357,11 @@ async function renderDp(username, input) {
   const btn = document.createElement("button");
   btn.className = "dl-btn";
   btn.disabled = true;
-  btn.textContent = "Preparing…";
+  btn.textContent = t("Preparing…");
   row.appendChild(btn);
   box.appendChild(row);
   card.appendChild(box);
 
-  /* Instagram serves profile pics with `Cross-Origin-Resource-Policy:
-     same-origin`, so browsers block direct cross-origin <img> loads (that's
-     the ERR_BLOCKED_BY_RESPONSE.NotSameOrigin error, and why the preview was
-     blank, the size showed "?x?", and the button fell back to opening a new
-     tab). Fix: pull the bytes through the PIC_PROXIES chain (server-side
-     CORS proxies), then show them as a same-origin blob URL so preview,
-     resolution and a direct download all work. If every proxy fails too,
-     fall back to opening the picture in a new tab — top-level navigation
-     isn't blocked by CORP. */
   let blob = null;
   let blobUrl = null;
   blob = await fetchProfilePicBytes(pic);
@@ -1391,14 +1392,14 @@ async function renderDp(username, input) {
 
   btn.disabled = false;
   if (blob) {
-    btn.textContent = "Download profile pic (" + nw + "×" + nh + ")";
+    btn.textContent = t("Download") + " (" + nw + "×" + nh + ")";
     btn.onclick = () => triggerSave(blob, username + "_profile_pic_" + nw + "x" + nh + ".jpg");
   } else {
     const note = document.createElement("div");
     note.className = "frame-hint";
-    note.textContent = "Preview blocked by Instagram. Use the button below to open the picture.";
+    note.textContent = t("Preview blocked by Instagram. Use the button below to open the picture.");
     frame.appendChild(note);
-    btn.textContent = "Open profile pic";
+    btn.textContent = t("Open profile pic");
     btn.onclick = () => window.open(pic, "_blank");
   }
   addHistory({ kind: "dp", label: "@" + username, input });
@@ -1414,13 +1415,13 @@ downloadBtn.addEventListener("click", async () => {
 
   const parsed = parseInput(input);
   if (parsed.kind === "unknown") {
-    showError("Paste a full Instagram link (reel/post, story or highlight), a profile link, or a bare username.");
+    showError(t("Paste a full Instagram link (reel/post, story or highlight), a profile link, or a bare username."));
     return;
   }
 
-  const busyText = parsed.kind === "post" ? "Resolving the post…"
-    : parsed.kind === "highlight" ? "Looking up the highlight…"
-    : parsed.kind === "story" ? "Looking up the story…"
+  const busyText = parsed.kind === "post" ? t("Resolving the post…")
+    : parsed.kind === "highlight" ? t("Looking up the highlight…")
+    : parsed.kind === "story" ? t("Looking up the story…")
     : "Looking up @" + parsed.username + "…";
   setBusy(true, busyText);
   try {
@@ -1429,7 +1430,7 @@ downloadBtn.addEventListener("click", async () => {
       const data = await fetchMedia(input);
       await renderItems(data, {
         openUrl: "https://www.instagram.com/reel/" + data.code + "/",
-        label: data.items.length > 1 ? data.items.length + " media items" : "1 media item",
+        label: data.items.length > 1 ? data.items.length + " " + t("media items") : t("1 media item"),
         filePrefix: "instagram_" + data.code,
         historyKind: "post",
         historyLabel: data.code,
@@ -1439,7 +1440,7 @@ downloadBtn.addEventListener("click", async () => {
       const id = parsed.kind === "highlight" ? ((parsed.url.match(/highlights\/(\d+)/) || [])[1] || "highlight") : "story";
       const label = (data.meta && data.meta.title)
         ? "Highlight · " + data.meta.title
-        : (parsed.kind === "highlight" ? "Highlight" : "Story") + " · " + (data.items.length > 1 ? data.items.length + " media items" : "1 media item");
+        : (parsed.kind === "highlight" ? "Highlight" : t("Story")) + " · " + (data.items.length > 1 ? data.items.length + " " + t("media items") : t("1 media item"));
       await renderItems(data, {
         openUrl: parsed.url,
         label,

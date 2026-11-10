@@ -6,7 +6,7 @@
     "dev": "node server.js",
     "build": "echo 'Static site build complete'",
     "start": "node server.js",
-    "lint": "node --check server.js && node --check public/js/script.js && node --check public/sw.js"
+    "lint": "node --check server.js && node --check public/js/i18n-dict.js && node --check public/js/script.js && node --check public/sw.js"
   },
   "dependencies": {
     "express": "^4.21.2"

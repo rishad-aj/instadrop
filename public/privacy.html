@@ -308,6 +308,7 @@
   </div>
 </footer>
 <script>try{document.querySelectorAll(".js-year").forEach(function(el){el.textContent=new Date().getFullYear();});}catch(e){}</script>
+<script src="/js/i18n-dict.js"></script>
 
 <script>
   (function () {
@@ -397,12 +398,21 @@
     function applyLegalLang(lang, pushUrl) {
       if (!LANG_FLAGS[lang]) lang = "en";
       try { localStorage.setItem("instadrop_lang", lang); } catch (e) {}
+      document.documentElement.setAttribute("lang", lang);
+      document.documentElement.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
       var flagEl = document.getElementById("currentLangFlag");
       var codeEl = document.getElementById("currentLangLabel");
       if (flagEl) flagEl.src = LANG_FLAGS[lang];
       if (codeEl) codeEl.textContent = lang.toUpperCase();
       var langBtns = document.querySelectorAll(".lang-item, .side-lang-item");
-      for (var i = 0; i < langBtns.length; i++) langBtns[i].classList.toggle("active", langBtns[i].getAttribute("data-lang") === lang);
+      for (var i = 0; i < langBtns.length; i++) {
+        var isCurrent = langBtns[i].getAttribute("data-lang") === lang;
+        langBtns[i].classList.toggle("active", isCurrent);
+        langBtns[i].classList.toggle("dd-active", isCurrent);
+      }
+      if (window.InstadropI18n && typeof window.InstadropI18n.translateFullDOM === "function") {
+        window.InstadropI18n.translateFullDOM(lang);
+      }
       var anchors = document.querySelectorAll("a[href]");
       for (var j = 0; j < anchors.length; j++) {
         var href = anchors[j].getAttribute("href");
@@ -422,7 +432,7 @@
     var mLang = location.pathname.match(/^\/(en|es|pt|id|fr|de|tr|ar|hi)(?:\/|$)/);
     var savedLang = mLang ? mLang[1] : null;
     if (!savedLang) { try { savedLang = localStorage.getItem("instadrop_lang"); } catch (e) {} }
-    if (savedLang && LANG_FLAGS[savedLang]) applyLegalLang(savedLang, false);
+    applyLegalLang(savedLang && LANG_FLAGS[savedLang] ? savedLang : "en", false);
     var allLangBtns = document.querySelectorAll(".lang-item, .side-lang-item");
     for (var lb = 0; lb < allLangBtns.length; lb++) {
       allLangBtns[lb].addEventListener("click", function () {

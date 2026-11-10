@@ -146,6 +146,7 @@
   </div>
 </main>
 
+<script src="/js/i18n-dict.js"></script>
 <script>
   (function () {
     "use strict";
@@ -158,6 +159,22 @@
     var errorEl = document.getElementById("errorEl");
     var params = new URLSearchParams(location.search);
     var action = params.get("action");
+
+    var savedLang = params.get("lang") || null;
+    if (!savedLang) {
+      try { savedLang = localStorage.getItem("instadrop_lang"); } catch (e) {}
+    }
+    var activeLang = savedLang || "en";
+    document.documentElement.setAttribute("lang", activeLang);
+    document.documentElement.setAttribute("dir", activeLang === "ar" ? "rtl" : "ltr");
+    if (window.InstadropI18n && typeof window.InstadropI18n.translateFullDOM === "function") {
+      window.InstadropI18n.translateFullDOM(activeLang);
+    }
+    function wt(s) {
+      return (window.InstadropI18n && typeof window.InstadropI18n.t === "function")
+        ? window.InstadropI18n.t(s, activeLang)
+        : s;
+    }
 
     function applyTheme(dark) {
       document.documentElement.dataset.theme = dark ? "dark" : "light";
@@ -201,6 +218,14 @@
         applyChoice(e.newValue || "light");
         syncTheme();
       }
+      if (e.key === "instadrop_lang" && e.newValue) {
+        activeLang = e.newValue;
+        document.documentElement.setAttribute("lang", activeLang);
+        document.documentElement.setAttribute("dir", activeLang === "ar" ? "rtl" : "ltr");
+        if (window.InstadropI18n && typeof window.InstadropI18n.translateFullDOM === "function") {
+          window.InstadropI18n.translateFullDOM(activeLang);
+        }
+      }
     });
     var mq = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
     if (mq && mq.addEventListener) {
@@ -241,10 +266,10 @@
       var v = input.value.trim();
       if (!v) {
         input.focus();
-        showError("Paste an Instagram link or @username first.");
+        showError(wt("Paste an Instagram link or @username first."));
         return;
       }
-      location.href = "/?url=" + encodeURIComponent(v) + "#downloader";
+      location.href = "/" + activeLang + "?url=" + encodeURIComponent(v) + "#downloader";
     }
 
     async function doPaste(auto) {
@@ -255,15 +280,15 @@
           syncPh();
           errorEl.classList.add("hidden");
           if (auto || looksLikeInsta(t)) {
-            status.textContent = "Pasted from clipboard — opening download…";
+            status.textContent = wt("Pasted from clipboard — opening download…");
             setTimeout(go, 350);
           }
           return;
         }
-        showError("Clipboard is empty — copy an Instagram link first, then press Paste.");
+        showError(wt("Clipboard is empty — copy an Instagram link first, then press Paste."));
         input.focus();
       } catch (e) {
-        showError("Couldn't read clipboard automatically — press Ctrl+V or long-press inside the box.");
+        showError(wt("Couldn't read clipboard automatically — press Ctrl+V or long-press inside the box."));
         input.focus();
       }
     }
